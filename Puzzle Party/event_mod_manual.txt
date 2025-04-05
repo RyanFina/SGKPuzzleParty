@@ -1,0 +1,140 @@
+The event system is designed on room-to-room base. To edit the appearance/functionalities of the rooms, access the planner folder,
+where you can find entity.lua, lang.lua, quest.lua, tiles.lua, tileType.lua, tuto_content.lua and last but not least scenerio.lua.
+Here's the deeper dive into each one:
+========================================================================================
+****************
+    lang.lua
+        all the content in this file will be imported and overwrite over the current lang file if they have same lang key 
+        There're special syntaxs that preserve only for dialogues, like <where title goes> and {where the choices go,differentiate from each other by the comma, don't space at the start of the choice like this}
+        In multiple choices dialogues, the amount of choices will automatically be assigned to the same amount of the next events in that order
+
+    entity.lua
+        this file is used to make prototypes of entities that we use in mk_entity
+        Example of the minimum code's requirement:
+            wall = function(px,py)
+                local wall = mke()
+                add_child(board,wall)
+                wall.name= "wall"
+                wall.y=py*SQ-1
+                wall.x = px*SQ
+                wall.dp=DP_PIECES
+                wall.dr=function(e,x,y)
+                    dr_entity(19,x,y)
+                end
+                return wall
+            end,
+        you can change dr_entity's number to fit the sprite smol_entity.png. A little more advance examples can be found in entity.lua, but nothing really complex
+
+    tileType.lua
+        organized like entity.lua, here you manage the tile's sprite with dr_tile with sprite from tiles.png
+        there's onEnter and onExit property that can be set to function to process what will happen if we Enter or Exit that specific tile's type
+        Special:
+        Every tile type that start with "void" will have the void background instead
+
+    tiles.lua
+        this file will determine the placement of special tiles in each room.
+        Syntax:
+            {"tileType",px, py, ...}
+            {"tileType","num...[_ocpy]", px, py,...}
+            {"tileType","row...[_ocpy]", row_number}
+            {"tileType","col...[_ocpy]", col_number}
+            {"tileType","rect...[_ocpy]", x1,y1, x2,y2} -- rectangle
+            {"tileType","frect...[_ocpy]", x1,y1, x2,y2} -- filled rectangle
+            {"tileType","ellip...[_ocpy]", cx,cy, rx,ry} -- ellipse
+            {"tileType","fellip...[_ocpy]", cx,cy, rx,ry} -- filled ellipse
+            {"tileType","circ...[_ocpy]", cx,cy ,r} -- circle
+            {"tileType","fcirc...[_ocpy]", cx,cy, r} -- filled circle
+            {"tileType","rand...[_ocpy]", rand_number} -- random 
+        The optional "_ocpy" will determine if that square is traversable or not
+
+    tuto_content.lua
+        this is where the tutorial content placed
+        Syntax:
+            ["tuto_name"]={
+                chess={{piece=piece_index},{text="a key name in lang.lua"}}, --left
+                ctrl={
+                    {text="a key name in lang.lua"}, --right
+                }
+            },
+
+            chess and ctrl are both optional
+
+    quest.lua
+        this is where quest is saved
+        Syntax:
+            {name="quest name", event="reward", [condition ="something"]},
+
+    scenerio.lua
+        This is where the whole event system is revolved around
+        General event syntax:
+            {"event_name" , params={...}}
+            {"event_name", params=something} -- if the |something| is not a table (string, boolean, number...)
+
+        There're a lot of stuffs here, but here's some of the most vital events:
+        *For my convenience, this will be display as the original function form. When write in scenerio.lua, remember to convert it to the general syntax*
+        **
+            There's a common table named |ev| (or even condition in ev_cond) that you need to understand
+            Structure:
+            ev= {event={}, condition={}, trigger={}, prelude={}, repeatable="..."} 
+            where:
+                |event| store the interactions with the player
+                |prelude| store the interactions before the main event is triggered
+
+                |condition| store the conditions that will spawn the entity with the event
+                |trigger| store the triggers that will trigger the event
+                    |condition| and |trigger| both have the same kind of syntax:
+                    "([comparison operators][quality])[not_]event_name"
+                    where
+                        [comparison operators] is either "lt","le", "gt","ge"; which is like <, <=, >, >=
+                        [quality] is the quality of the event
+                    so if we see :
+                        "(lt2)not_ev1"
+                            it means that if the event ev1 has happened no less than twice, it will trigger
+                
+                |repeatable| determine if the event is repeatable, and what kind of repeatable you want
+                    "deplete" means with each interaction, one event will be removed until there's none
+                    "tough" is like deplete, but it will not remove the last event
+                    "shuffle" will randomize the event's order
+                    "recycle" will recyle back to the first event after the last event is triggered
+        **
+
+        mk_entity (name, px, py , [ev])
+            The name param will be an entity prototype from entity.lua
+
+        ev_spawn(type,isBad, px,py,[ev], [info])
+            the optional |info| param is a table that will add specific stats to that piece
+
+        mk_square_trigger(ev, ...)
+            the syntax of ... is like in tiles.lua, where you can set a pattern of squares that will trigger a particular event
+            Its most common usage is setting up transport square between room
+
+        ev_down_dialogue(key)
+        ev_down_dialogue_left(character, key, [ev], [frames])
+        ev_down_dialogue_right(character, key, [ev], [frames])
+        ev_up_dialogue_left(character, key, [ev], [frames])
+        ev_up_dialogue_right(character, key, [ev], [frames])
+            optional frames is used when frames is not 6, the current other animation frame option is just 5 though 
+
+        ev_cond(condition) ... [ev_else] ... ev_end
+            this is like if else end in lua, don't have any elseif, but you can make do by nested them in ev_else
+
+        ev_reset_gameplay()
+            After each cinematic, it's advised to called this function to clear out the remnants of the last cinematic
+
+        ev_move_hero_ang (px,py)
+        ev_wait (frame)
+
+        create_tuto_panels()
+        ev_show_tuto_panels(key)
+
+        create_objectives()
+        ev_quest(key)
+        
+        mark_event(name, ev, params)
+            Use when you want to mark an event for later in dialogue choice
+
+        ev_mark_event(name, ev, params)
+            The same as above but as a standalone event
+
+****************
+
