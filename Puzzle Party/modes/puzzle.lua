@@ -3,10 +3,7 @@ id = "puzzle"
 
 -- If you have some debugging to do, set the chosen stat as 1 or the chosen value --
 
-	Floor_Skipping=1				-- Creates a button that automatically makes you win the floor when clicked
 	First_Room_Number=270			-- Determines on which floor you start when starting a new game
-	Reset_Roomer=1					-- Creates a button that resets the room you are currently in, this one is activated by default to "fix" the non-updating pieces problem
-	Bypass_Keydoors_Passdoors=0		-- Doors that require a key or a passcode are automatically unlocked
 	
 	-----------------------------------------------------------------------------------
 local test = require("test")
@@ -44,7 +41,6 @@ function start()
 	mode.no_shotgun=true
 	mode.hide_cards=true
 	trigger_events(mode.lvl)
-	-- mk_text_but(181,155,32,"nextf",mode.room_history, "keychest2").ents[1].button = false
 end
 
 function get_board_size()

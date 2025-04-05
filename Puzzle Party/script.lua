@@ -1385,8 +1385,6 @@
         log(str)
         event_nxt()
     end
-    hide_shotgun= true
-    
     pressR = false
     function ev_transport(id, f)
         if TEMPO <15 then
@@ -1802,14 +1800,21 @@
     
     function ev_enable_shotgun()
         mode.no_shotgun=false
-        hide_shotgun= false
         event_nxt()
     end
     function ev_disable_shotgun()
         mode.no_shotgun=true
-        hide_shotgun= true
         event_nxt()
     end
+    function ev_hide_card()
+       mode.hide_card=true
+       event_nxt() 
+    end
+    function ev_show_card()
+        mode.hide_card=false   
+        event_nxt()
+    end
+    
     function ev_base_promote(name, value)
         local name_promote = name.."_promote"
         mode.base[name_promote]= value      
@@ -1839,9 +1844,6 @@
         event_nxt()
         
     end
-    -- Write events code above, below general_events will trigger error
-    -- SCRIPT EVENTS EACH MODE EACH STAGE/ROOM
-    
     allies = {}
     history = {room={}}
     
