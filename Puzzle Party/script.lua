@@ -31,7 +31,7 @@
             add(tbl, v)
         end
     end
-    
+    -- DEV = true 
     -- Adding a custom piece.
     ranger_typ = #PIECES -- We don't want to use a type already in use by the game or another mod.
     lang["piece_" .. ranger_typ] = "Ranger"
@@ -882,6 +882,11 @@
             p.nums = nums or nil
             p.compare= compare or nil
             if info ~="default" then
+                if info.pike then
+                    local beh = PIECES_TYPES[type].behavior
+                    add(beh, { id="line",1,1,2,  atk=1, fatality="pike" })
+                    info.behavior = beh
+                end
                 tbl_import(p, info)
             end
             
@@ -1690,6 +1695,11 @@
     function ev_set_hp(name, num)
         local name_hp = name.."_hp"
         mode.base[name_hp] = num
+        event_nxt()
+    end
+    function ev_pike(name, value)
+        local name_pike = name.."_pike"
+        mode.base[name_pike] = value
         event_nxt()
     end
     function ev_gain(tbl)
@@ -2735,8 +2745,8 @@
         end
     
         if btnp("h") then
-            _log(test.openSesame(history))
-            _log(test.openSesame(count_event))
+            -- _log(test.openSesame(PIECES_TYPES))
+            _log(test.openSesame(PIECES))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -2995,6 +3005,6 @@
     function draw_6()
         if btn("e") then for k,e in pairs(ents) do if not e.glacies then lprint(k,e.x,e.y,5, 0, 4) end end end
         if btn("b") then for k,e in pairs(ents) do if not e.glacies and e.button then lprint(k,e.x,e.y,5,0,4) end end end
-        if btn("g") then lprint(mx..","..my, 5, 173,5,0,4) end
+        if btn("g") then lprint(mx..","..my .. " " .. tostr(aim), 5, 173,5,0,4) end
     end
     
