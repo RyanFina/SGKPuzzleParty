@@ -1,1 +1,1 @@
-# SGKPuzzleMod
+# SGKPuzzleParty
