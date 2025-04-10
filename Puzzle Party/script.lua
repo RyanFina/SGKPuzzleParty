@@ -23,100 +23,7 @@
     local replaceable = gimme("replaceable")
     local forbidden = gimme("forbidden")
     local autocall = gimme("autocall")
-    -- Call the function to iterate through DARK_FORCE
-    
-    -- This is a simple utility function which adds a table's content into another table.
-    function add_content(tbl, new_content)
-        for _, v in ipairs(new_content) do
-            add(tbl, v)
-        end
-    end
     -- DEV = true 
-    -- Adding a custom piece.
-    ranger_typ = #PIECES -- We don't want to use a type already in use by the game or another mod.
-    lang["piece_" .. ranger_typ] = "Ranger"
-    lang["short_piece_" .. ranger_typ] = "Ranger"
-    add(PIECES, {
-        type = ranger_typ,
-        name = "ranger", hp = 4,  tempo = 3,  danger = 3,  seek = "wdist",
-        give_soul = true, 
-        hdy = 1,
-        behavior= {
-            { id="line",2,2,8,  move=1, atk=1 },
-            { id="line",4,4,8,  move=1, atk=1 },
-            { id="line",7,7,8,  move=1, atk=1 },
-            -- { id= "jump", move=1, atk=1, 2,-1,2,1, 1,2,-1,2, -2,-1,-2,1, -1,-2,1,-2},
-           
-        },
-        custom_range = function(e, max_range, flying, add_sq)
-    
-            local max = min(max_range or 2, 2)
-            local x, y = e.sq.px, e.sq.py
-    
-            for yy = -max, max do
-                for xx = -max, max do
-                    if (xx == max or y == max) and abs(xx) + abs(yy) <= 3 then
-                        add_sq(gsq(x + xx, y + yy))
-                    end
-                end
-            end
-        end,
-        custom_atk = function(e, max_range, flying, add_sq)
-            local max = min(max_range or 1, 1)
-            local x, y = e.sq.px, e.sq.py
-    
-            for yy = -max, max do
-                for xx = -max, max do
-                    if (xx ~= 0 or yy ~= 0) then
-                        add_sq(gsq(x + xx, y + yy))
-                    end
-                end
-            end
-        end,
-        custom_dr = function(e, x, y, angle)
-            spritesheet("samplemod_pieces")
-            if angle then
-                aspr(e.iron and 1 or 0, x, y, angle)
-            else
-                spr(e.iron and 1 or 0, x, y)
-            end
-        end,
-        custom_debris = function(p, x, y)
-            spritesheet("samplemod_pieces")
-            sspr(24, 16, 8, 8, x - 4, y - 4)
-        end,
-        custom_move_dr = function(x, y)
-            spritesheet("samplemod_pieces")
-            spr(16, x, y, 1.5, 1.5)
-        end
-    })
-    
-    -- Adding new custom cards.
-    local new_cards = {{
-        gid = 0,
-        spsheet = "samplemod_cards",
-        team = 0,
-        n = 1,
-        id = "Voodoo Doll",
-        king_hp = -3
-    }, {
-        gid = 1,
-        spsheet = "samplemod_cards",
-        team = 1,
-        n = 1,
-        id = "Training",
-        sac = 0,
-        gain = ranger_typ
-    }}
-    
-    for i, ca in pairs(new_cards) do
-        ca.played = 1 -- These stats will be used in the codex.
-        ca.ignored = 0 -- You may save them and retrieve them yourself with your mod's save bank if you'd like.
-    end
-    
-    add_content(CARDS, new_cards)
-    add_content(EXCLUDE, {{"Voodoo Doll", "Theocracy"} -- Each of these two cards can never appear if the other is present.
-    })
     
     test.openSesame(global, "Global")
     
@@ -129,6 +36,7 @@
     require("planner/medals.lua")
     bestTries = {}
     
+    require("planner/pieces.lua")
     -- START_LVL=27
     require("planner/lang.lua")
     function add_lang()
