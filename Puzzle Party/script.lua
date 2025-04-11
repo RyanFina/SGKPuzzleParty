@@ -2664,7 +2664,7 @@
         if playing and btnr("r") then
             local Return = function(base) 
                 local buffer = 600
-                if hero and hero.sq and hero.sq.t >buffer then
+                if hero and hero.sq and hero.sq.t >buffer  and not pressR then
                     pressR = true
                     mode.trigger_events(mode_id, "move_"..base)
                     play_events()
@@ -2672,7 +2672,9 @@
             end
             if hero and (hero.win or hero.dead or hero.fail) then return end
             if mode_id =="puzzle" then
-                if mode.lvl <7 then
+                if mode.lvl ==1 or mode.lvl ==7 then
+                    return
+                elseif mode.lvl <7 then
                     Return(1)
                 elseif mode.lvl <14 then
                     Return(7)
