@@ -29,6 +29,7 @@ english = {
         name_7="Maze",
         name_8="Knight's Quest",
         name_9="Charging Through!",
+		name_10="Winding Paths",
         -- Medal +Objectives:
         obj_puzzle_2 = " -Get through the corridor and escape",
         obj_puzzle_3 = " -Kill the white king and escape",
@@ -36,6 +37,7 @@ english = {
         obj_puzzle_5 = " -Kill the white king",
         obj_puzzle_6 = " -Kill the white king and escape",
         obj_puzzle_8 = " -Escape the maze",
-        obj_puzzle_9 = " -Escape the maze"
+        obj_puzzle_9 = " -Escape the maze",
+        obj_puzzle_10 = " -Escape the maze"
     }
 }
