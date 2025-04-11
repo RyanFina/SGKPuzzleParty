@@ -32,7 +32,10 @@
     test.openSesame(replaceable, "Replaceable")
     
     test.openSesame(autocall, "Autocall")
-    
+    for i,v in ipairs(MODLIST) do if v.title == "Puzzle Party" then
+        mod_index,mod = i,v
+        break
+    end end
     require("planner/medals.lua")
     bestTries = {}
     
@@ -50,8 +53,7 @@
             tbl_import(lang, v)
         end
     end
-    
-    add_lang(current_lang)
+    add_lang()
     append("load_lang",add_lang,"added_lang")
     
     local entities= {}

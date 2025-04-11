@@ -1,5 +1,6 @@
 english = { 
     ["puzzle"]={
+        [mod_index..". puzzle_desc"] = "Puzzle progression adventure ultra ultimate challenge that left your mind gasping",
         quest = "Quest",
         current="Current:",
         completed="Completed:",
