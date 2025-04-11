@@ -72,6 +72,25 @@ add(PIECES, {type=minknight_typ,
 		spr(4, x, y, 2, 2)
 	end
 })
+patrol_typ = #PIECES
+lang["piece_"..patrol_typ] = "Patrol Soldier"
+lang["short_piece_"..patrol_typ] = "Patrol"
+
+add(PIECES, {type=patrol_typ,
+	name="patrol", hp=4, tempo=1, danger=6, seek="kdist",
+	give_soul=false, hdy=0, cus_move=true,
+	behavior={
+		{ id="clockwork", move=1,  0,2, 2, 0, 0,-2, -2, 0},
+	},
+	custom_dr = function(e,x,y,angle)
+		spritesheet("pieces")
+		spr(e.iron and 3 or 2, x, y)
+	end,
+	custom_move_dr2 = function(x,y)
+		spritesheet("movemap")
+		spr(2, x, y, 2, 2)
+	end
+})
 function add_bsq(e, sq, m, a)
 	local x, y
 	if m == nil then
@@ -165,6 +184,31 @@ function mod_range(e, sq, hero_check)
 			beh2 = clone(beh, true)
 			beh2.id = "jump"
 			add(e.behavior, beh2)
+
+		elseif beh.id =="clockwork" and e.sq then
+			e.turn = e.turn or 1
+			if e.turn ~= mode.turns then
+				local index = e.nxt_beh or 2
+				if mode.turns % e.tempo == 0 and gsq(e.sq.px + beh[index-1], e.sq.py + beh[index])
+				then
+					if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == nil and beh.move then
+						goto_sq(e, gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]))
+						
+						if e.nxt_beh == #beh then
+							e.nxt_beh = 2
+						else
+							e.nxt_beh = index +2
+						end
+					elseif gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == hero and beh.atk then
+						goto_sq(e, hero.sq)
+						wait(TEMPO, function()
+							xpl_king(hero)
+						end)
+
+					end
+				end
+				e.turn = mode.turns
+			end
 		end
 	end
 end

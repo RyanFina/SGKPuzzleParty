@@ -1302,6 +1302,7 @@
     end
     pressR = false
     function ev_transport(id, f)
+        remove_buts()
         if TEMPO <15 then
             mode.base.TEMPO =1
         elseif TEMPO >=15 then
