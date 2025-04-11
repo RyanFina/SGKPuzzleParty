@@ -804,7 +804,7 @@
             piece_transition(p,TEMPO)
         end
         if instant then
-            event_nxt()
+            wait(2, event_nxt)
         else
             wait(TEMPO, event_nxt)
         end
