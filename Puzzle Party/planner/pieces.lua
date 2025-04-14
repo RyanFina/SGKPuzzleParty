@@ -77,10 +77,13 @@ lang["piece_"..patrol_typ] = "Patrol Soldier"
 lang["short_piece_"..patrol_typ] = "Patrol"
 
 add(PIECES, {type=patrol_typ,
-	name="patrol", hp=4, tempo=1, danger=6, seek="kdist",
+	name="patrol", hp=4, tempo=4, danger=6, seek="kdist",
 	give_soul=false, hdy=0, cus_move=true,
 	behavior={
-		{ id="clockwork", move=1,  0,2, 2, 0, 0,-2, -2, 0},
+		{ id="clockwork", move=1, 0,1, 0,1},
+		{ id="clockwork", move=1,  1, 0, 1, 0},
+		{ id="clockwork", move=1,  0,-1, 0,-1},
+		{ id="clockwork", move=1, atk=1,  -1, 0, -1, 0},
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
@@ -142,7 +145,7 @@ function mod_range(e, sq, hero_check)
 		sq = e.sq
 	end
 	hero_check = hero_check and stack.hop
-	for beh in all(e.behavior) do
+	for kbeh, beh in ipairs(e.behavior) do
 		-- Line move offsetted by a sequence of moves
 		if (beh.id == "offset") then
 			lin_start = true
@@ -187,27 +190,27 @@ function mod_range(e, sq, hero_check)
 
 		elseif beh.id =="clockwork" and e.sq then
 			e.turn = e.turn or 1
+			e.buffer = e.buffer or 0
 			if e.turn ~= mode.turns then
-				local index = e.nxt_beh or 2
-				if mode.turns % e.tempo == 0 and gsq(e.sq.px + beh[index-1], e.sq.py + beh[index])
-				then
-					if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == nil and beh.move then
-						goto_sq(e, gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]))
-						
-						if e.nxt_beh == #beh then
-							e.nxt_beh = 2
-						else
-							e.nxt_beh = index +2
+				if (e.turn -1 -e.buffer) % e.tempo == kbeh-1 then 
+					for index = 2, #beh, 2 do
+						if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]) then
+							if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == nil and beh.move then
+								goto_sq(e, gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]))
+							elseif gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == hero and beh.atk then
+								goto_sq(e, hero.sq)
+								wait(TEMPO, function()
+									xpl_king(hero) 
+								end)
+								break
+							else
+								e.buffer = e.buffer + 1
+								break
+							end
 						end
-					elseif gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == hero and beh.atk then
-						goto_sq(e, hero.sq)
-						wait(TEMPO, function()
-							xpl_king(hero)
-						end)
-
 					end
+					e.turn = mode.turns
 				end
-				e.turn = mode.turns
 			end
 		end
 	end
