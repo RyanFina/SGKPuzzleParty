@@ -205,6 +205,7 @@ function mod_range(e, sq)
 								if index == #beh then
 									for i = 2, #e.behavior[next_beh], 2 do
 										if gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i])
+										and not gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]).p
 										and e.behavior[next_beh].atk
 										then
 											add(cl_danger, {px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]})
@@ -225,6 +226,8 @@ function mod_range(e, sq)
 								if index == #beh then
 									for i = 2, #e.behavior[next_beh], 2 do
 										if gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i])
+										and (not gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]).p 
+										or gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]).p == hero)
 										and e.behavior[next_beh].atk
 										then
 											add(cl_danger, {px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]})
