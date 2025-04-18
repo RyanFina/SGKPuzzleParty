@@ -1,5 +1,7 @@
 newsrf("pieces.png", "pieces")
 newsrf("movemap.png", "movemap")
+
+local test = require("test.lua")
 gryphon_typ = #PIECES
 lang["piece_"..gryphon_typ] = "Gryphon"
 lang["short_piece_"..gryphon_typ] = "Gryphn"
@@ -140,11 +142,10 @@ function checksq(x, y, e, ss, m, a)
 	end
 end
 
-function mod_range(e, sq, hero_check)
+function mod_range(e, sq)
 	if sq == nil then
 		sq = e.sq
 	end
-	hero_check = hero_check and stack.hop
 	for kbeh, beh in ipairs(e.behavior) do
 		-- Line move offsetted by a sequence of moves
 		if (beh.id == "offset") then
@@ -191,17 +192,47 @@ function mod_range(e, sq, hero_check)
 		elseif beh.id =="clockwork" and e.sq then
 			e.turn = e.turn or 1
 			e.buffer = e.buffer or 0
+
 			if e.turn ~= mode.turns then
 				if (e.turn -1 -e.buffer) % e.tempo == kbeh-1 then 
 					for index = 2, #beh, 2 do
 						if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]) then
 							if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == nil and beh.move then
 								goto_sq(e, gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]))
+								local next_beh = kbeh ==#e.behavior and 1 or kbeh+1
+								local px =e.sq.px
+								local py =e.sq.py
+								if index == #beh then
+									for i = 2, #e.behavior[next_beh], 2 do
+										if gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i])
+										and e.behavior[next_beh].atk
+										then
+											add(cl_danger, {px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]})
+											px = px + e.behavior[next_beh][i-1]
+											py = py + e.behavior[next_beh][i]
+										end
+									end
+								end
+
 							elseif gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == hero and beh.atk then
 								goto_sq(e, hero.sq)
 								wait(TEMPO, function()
 									xpl_king(hero) 
 								end)
+								local next_beh = kbeh ==#e.behavior and 1 or kbeh+1
+								local px =e.sq.px
+								local py =e.sq.py
+								if index == #beh then
+									for i = 2, #e.behavior[next_beh], 2 do
+										if gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i])
+										and e.behavior[next_beh].atk
+										then
+											add(cl_danger, {px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]})
+											px = px + e.behavior[next_beh][i-1]
+											py = py + e.behavior[next_beh][i]
+										end
+									end
+								end
 								break
 							else
 								e.buffer = e.buffer + 1
@@ -241,7 +272,7 @@ prepend("get_range", function(e, b)
 		if (e == hero and e.sq) then
 			for piece in all(PIECES) do
 				if (piece.behavior and piece.cus_move) then
-					mod_range(piece, e.sq, true)
+					mod_range(piece, e.sq)
 				end
 			end
 		end

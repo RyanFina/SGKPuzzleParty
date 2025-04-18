@@ -36,6 +36,7 @@
         mod_index,mod = i,v
         break
     end end
+    
     require("planner/medals.lua")
     bestTries = {}
     
@@ -1337,6 +1338,7 @@
             end
         end
         entities={}
+        cl_danger={}
         if chess_panel and ctrl_panel then
             mv(chess_panel,-100,0,30)
             mv(ctrl_panel,100,0,30)
@@ -2657,7 +2659,7 @@
     
         if btnp("h") then
             -- _log(test.openSesame(PIECES_TYPES))
-            _log(test.openSesame(PIECES))
+            _log(test.openSesame(squares))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -2724,6 +2726,23 @@
             set_drawing(dp)
         end
     end
+    cl_danger={}
+    autocalls = {
+        on_new_turn = {function ()
+            cl_danger={}
+        end},
+    }
+    function set_autocall()
+        for name,t in pairs(autocalls) do if #t > 0 then
+            local foo = nil
+            if mode[name] then foo = mode[name] end
+            mode[name] = function(...)
+                for f in all(t) do f(...) end
+                if foo then foo(...) end
+            end
+        end end
+    end
+    append("set_mode",set_autocall,"terminal autocall")
     
     append("init_game",set_all_drawing,"terminal drawing")
     append("init_game",set_updater,"updater")
@@ -2908,6 +2927,13 @@
                 spr(47, v.x, v.y)
                 spritesheet(old_spr)
             end
+        end
+    
+        for v in all(cl_danger) do
+            spritesheet("customtiles")
+            local sq= gsq(v[1], v[2])
+            spr(2, sq.x, sq.y)
+            spritesheet(old_spr)
         end
     end
     function draw_3()end
