@@ -18,6 +18,7 @@ english = {
         left_puzzle_8 = " -Knights can jump over pieces, as well as their threaten ranges!",
         left_puzzle_9 = " -Not all mazes have one solution...",
         left_puzzle_10 = " -Some can even have dead ends!",
+        left_puzzle_11 = " -Not all mazes are waiting to be solved either...",
 
         dialogue_puzzle_2_1 = " To understand the way of the cannonball, you need to understand the weight of the ball. The force it was thrown, the push back it causes. What's better than an unlimited amount of cannonballs ready to throw at ironclad enemies to understand that? Pass the stage and prove your qualification",
         dialogue_puzzle_6_2 = " Cannonball will push enemy. Push enemy will be repelled along the path of the original thrown . Pushed enemy will be stunned and can't attack you in the same turn.",
@@ -30,7 +31,8 @@ english = {
         name_7="Maze",
         name_8="Knight's Quest",
         name_9="Charging Through!",
-		name_10="Winding Paths",
+        name_10="Winding Paths",
+        name_11="Shapeshifter",
         -- Medal +Objectives:
         obj_puzzle_2 = " -Get through the corridor and escape",
         obj_puzzle_3 = " -Kill the white king and escape",
@@ -39,6 +41,7 @@ english = {
         obj_puzzle_6 = " -Kill the white king and escape",
         obj_puzzle_8 = " -Escape the maze",
         obj_puzzle_9 = " -Escape the maze",
-        obj_puzzle_10 = " -Escape the maze"
+        obj_puzzle_10 = " -Escape the maze",
+        obj_puzzle_11 = " -Escape the maze"
     }
 }

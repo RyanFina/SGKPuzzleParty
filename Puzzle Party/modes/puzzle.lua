@@ -54,7 +54,7 @@ function get_board_size()
 		end
 		
 		return 3,8
-	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 then
+	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 then
 		return 10,10
 	else
 		-- restore gain from small board
@@ -115,6 +115,9 @@ function get_start_square()
 	elseif mode.lvl == 10 then
 		mode.destination = {}
 		return gsq(5,9)
+	elseif mode.lvl == 11 then
+		mode.destination = {}
+		return gsq(2,0)
 	elseif First_Room_Number and mode.lvl == First_Room_Number then
 		mode.destination = {}
 		return gsq(4,7)

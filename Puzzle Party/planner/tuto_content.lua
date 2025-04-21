@@ -35,6 +35,9 @@ pan_contents= {
             chess={{text="left_puzzle_10"}},
             medal = {{title="quest"},{text="obj_puzzle_10"},{line= true},{title="threshold"},{medals= true}}
         },
-
+        ["11"]={
+            chess={{text="left_puzzle_11"}},
+            medal={{title="quest"},{text="obj_puzzle_11"},{line= true},{title="threshold"},{medals= true}},
+        }
     }
 }

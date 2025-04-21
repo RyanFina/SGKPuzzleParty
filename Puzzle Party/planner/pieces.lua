@@ -67,7 +67,7 @@ add(PIECES, {type=minknight_typ,
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
-		spr(e.iron and 1 or 0, x, y)
+		spr(e.iron and 7 or 6, x, y)
 	end,
 	custom_move_dr2 = function(x,y)
 		spritesheet("movemap")
@@ -80,21 +80,21 @@ lang["short_piece_"..patrol_typ] = "Patrol"
 
 add(PIECES, {type=patrol_typ,
 	name="patrol", hp=4, tempo=4, danger=6, seek="kdist",
-	give_soul=false, hdy=0, cus_move=true,
+	hdy=0, cus_move=true,
 	behavior={
-		{ id="clockwork", move=1, 0,1, 0,1},
-		{ id="clockwork", move=1,  1, 0, 1, 0},
-		{ id="clockwork", move=1,  0,-1, 0,-1},
-		{ id="clockwork", move=1, atk=1,  -1, 0, -1, 0},
+		-- { id="clockwork", move=1, 0,1, 0,1},
+		-- { id="clockwork", move=1,  1, 0, 1, 0},
+		-- { id="clockwork", move=1,  0,-1, 0,-1},
+		-- { id="clockwork", move=1, atk=1,  -1, 0, -1, 0},
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
-		spr(e.iron and 3 or 2, x, y)
+		spr(e.iron and 1 or 0, x, y)
 	end,
-	custom_move_dr2 = function(x,y)
-		spritesheet("movemap")
-		spr(2, x, y, 2, 2)
-	end
+	-- custom_move_dr2 = function(x,y)
+	-- 	spritesheet("movemap")
+	-- 	spr(2, x, y, 2, 2)
+	-- end
 })
 function add_bsq(e, sq, m, a)
 	local x, y
@@ -192,13 +192,14 @@ function mod_range(e, sq)
 		elseif beh.id =="clockwork" and e.sq then
 			e.turn = e.turn or 1
 			e.buffer = e.buffer or 0
-
-			if e.turn ~= mode.turns then
+			e.give_soul = false
+			if e.turn ~= mode.turns and mode.turns >0 then
 				if (e.turn -1 -e.buffer) % e.tempo == kbeh-1 then 
 					for index = 2, #beh, 2 do
-						if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]) then
-							if gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == nil and beh.move then
-								goto_sq(e, gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]))
+						local off_sq = gsq(e.sq.px + beh[index-1], e.sq.py + beh[index])
+						if off_sq then
+							if off_sq.p == nil and beh.move then
+								goto_sq(e, off_sq)
 								local next_beh = kbeh ==#e.behavior and 1 or kbeh+1
 								local px =e.sq.px
 								local py =e.sq.py

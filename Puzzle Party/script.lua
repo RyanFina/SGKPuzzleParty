@@ -453,17 +453,28 @@
         event_nxt()
     end
     
-    function ev_souls(type, isUnlimited)
-        if isUnlimited then
+    piece_souls = {}
+    function ev_souls(typ, isUnlimited)
+        if type(isUnlimited) == "number" then
+            piece_souls[typ] = piece_souls[typ] and piece_souls[typ] + isUnlimited or isUnlimited
             append("activate_soul", function(e)
-                if e.oid and e.oid ==type then
-                    add_soul(type)
+                if e.oid and e.oid ==typ and piece_souls[typ] >0 then
+                    add_soul(typ)
+                    piece_souls[typ] = piece_souls[typ] -1
+                end
+            end, "souls"..typ)
+            add_soul(typ)
+            piece_souls[typ] = piece_souls[typ] -1
+        elseif isUnlimited then
+            append("activate_soul", function(e)
+                if e.oid and e.oid ==typ then
+                    add_soul(typ)
                 end
                
-            end, "souls"..type)
-            add_soul(type)
+            end, "souls"..typ)
+            add_soul(typ)
         else
-            add_soul(type)
+            add_soul(typ)
         end
         event_nxt()
     end
@@ -482,6 +493,13 @@
                 lprint("Turns: "..mode.turns, 5, 175,2) 
             end
         end
+        event_nxt()
+    end
+    function ev_paralysis(num, is_stack_only)
+        if not is_stack_only then
+            mode.base.paralysis = num
+        end
+        stack.paralysis = num
         event_nxt()
     end
     
@@ -1339,6 +1357,7 @@
         end
         entities={}
         cl_danger={}
+        piece_souls={}
         if chess_panel and ctrl_panel then
             mv(chess_panel,-100,0,30)
             mv(ctrl_panel,100,0,30)
@@ -1599,6 +1618,10 @@
         mode.base[name_tempo] = num
         event_nxt()
     end
+    function ev_turn(num)
+        mode.turns = mode.turns + num
+        event_nxt()
+    end
     function ev_hp(name, num)
         local name_hp = name.."_hp"
         num = num or 1
@@ -1680,9 +1703,9 @@
         stack.steed =nums
         event_nxt()
     end
-    function ev_militia(name)
+    function ev_militia(name, value)
         local name_militia = name.."_militia"
-        mode.base[name_militia] = not mode.base[name_militia]
+        mode.base[name_militia] = value
         event_nxt()
     end
     
@@ -1704,9 +1727,9 @@
         event_nxt()
     end
     
-    function ev_wrath(name)
-        local name_wrath = name.."_wrath"
-        mode.base[name_wrath]= 1
+    function ev_wraith(name, value)
+        local name_wraith = name.."_wraith"
+        mode.base[name_wraith]= value
         event_nxt()
     end
     function ev_orth(name)
@@ -2406,6 +2429,8 @@
     defbtn("h",0,"k:h")
     defbtn("r",0,"k:r")
     defbtn("x",0,"k:x")
+    defbtn("mcm",0,"m:mb")
+    
     function upd()
         if btnp("f") then
             if not hero then
@@ -2692,6 +2717,15 @@
                 xpl_king(hero)
             end)
         end
+    
+        if btnr("mcm") then
+            local sq= get_square_at(mx, my)
+            if sq and not sq.draft then
+                sq.draft= true
+            elseif sq and sq.draft then
+                sq.draft= false
+            end
+        end
     end
     function set_updater()
         local e = mke()
@@ -2730,6 +2764,11 @@
     autocalls = {
         on_new_turn = {function ()
             cl_danger={}
+            for k, v in pairs(squares) do
+                if v.draft then
+                    v.draft = false
+                end
+            end
         end},
     }
     function set_autocall()
@@ -2915,7 +2954,6 @@
     defbtn("e",0,"k:e")
     defbtn("b",0,"k:b")
     defbtn("g",0,"k:g")
-    
     function draw_0()end
     function draw_1()end
     function draw_2()
@@ -2935,6 +2973,15 @@
             spr(2, sq.x, sq.y)
             spritesheet(old_spr)
         end
+    
+        for k, v in pairs(squares) do
+            if v.draft then
+                spritesheet("customtiles")
+                spr(48, v.x, v.y)    
+                spritesheet(old_spr)
+            end
+        end
+      
     end
     function draw_3()end
     function draw_4()end
