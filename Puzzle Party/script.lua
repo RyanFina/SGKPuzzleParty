@@ -32,7 +32,7 @@
     test.openSesame(replaceable, "Replaceable")
     
     test.openSesame(autocall, "Autocall")
-    for i,v in ipairs(MODLIST) do if v.title == "Puzzle Party" then
+    for i,v in ipairs(MODLIST) do if v.title == "Puzzle Party Demo" then
         mod_index,mod = i,v
         break
     end end
