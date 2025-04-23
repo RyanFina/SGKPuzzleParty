@@ -2981,21 +2981,23 @@
             local movement ={}
             local px = p.sq.px
             local py = p.sq.py
+           
             for index = 1, #p.behavior, 1 do 
-                if p.behavior[index].atk then
-                    for i = 2, #p.behavior[index], 2 do
-                        if gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py) and not gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py).p then
-                            add(danger, {p.behavior[index][i-1]+ px,p.behavior[index][i]+ py})
-                            px = px + p.behavior[index][i-1]
-                            py = py + p.behavior[index][i]
+                local ind =  (p.turn -1 -p.buffer +index-1) % p.tempo+1
+                if p.behavior[ind].atk then
+                    for i = 2, #p.behavior[ind], 2 do
+                        if gsq(p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py) and (not gsq(p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py).p or gsq(p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py).p ==p) then
+                            add(danger, {p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py})
+                            px = px + p.behavior[ind][i-1]
+                            py = py + p.behavior[ind][i]
                         end                        
                     end
-                elseif p.behavior[index].move then
-                    for i = 2, #p.behavior[index], 2 do
-                        if gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py) and not gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py).p then
-                            add(movement, {p.behavior[index][i-1]+ px,p.behavior[index][i]+ py})
-                            px = px + p.behavior[index][i-1]
-                            py = py + p.behavior[index][i]
+                elseif p.behavior[ind].move then
+                    for i = 2, #p.behavior[ind], 2 do
+                        if gsq(p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py) and (not gsq(p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py).p or gsq(p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py).p ==p) then
+                            add(movement, {p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py})
+                            px = px + p.behavior[ind][i-1]
+                            py = py + p.behavior[ind][i]
                         end                        
                     end
                 end
