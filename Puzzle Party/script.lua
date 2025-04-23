@@ -823,7 +823,29 @@
                 add(allies, p)
             end
             piece_transition(p,TEMPO)
+            if p and p.behavior and #p.behavior>0 and p.behavior[1].id=="clockwork" then
+                local px = p.sq.px
+                local py = p.sq.py
+                if p.behavior[1].atk then
+                    for i = 2, #p.behavior[1], 2 do
+                        if gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py) and not gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py).p then
+                            add(cl_danger, {p.behavior[1][i-1]+ px,p.behavior[1][i]+ py})
+                            px = px + p.behavior[1][i-1]
+                            py = py + p.behavior[1][i]
+                        end                        
+                    end
+                elseif p.behavior[1].move then
+                    for i = 2, #p.behavior[1], 2 do
+                        if gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py) and not gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py).p then
+                            add(cl_movement, {p.behavior[1][i-1]+ px,p.behavior[1][i]+ py})
+                            px = px + p.behavior[1][i-1]
+                            py = py + p.behavior[1][i]
+                        end                        
+                    end
+                end
+            end
         end
+    
         if instant then
             wait(2, event_nxt)
         else
@@ -1320,6 +1342,7 @@
         event_nxt()
     end
     pressR = false
+    
     function ev_transport(id, f)
         remove_buts()
         if TEMPO <15 then
@@ -2683,8 +2706,7 @@
         end
     
         if btnp("h") then
-            -- _log(test.openSesame(PIECES_TYPES))
-            _log(test.openSesame(squares))
+            _log(test.openSesame(PIECES))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -2761,9 +2783,11 @@
         end
     end
     cl_danger={}
+    cl_movement = {}
     autocalls = {
         on_new_turn = {function ()
             cl_danger={}
+            cl_movement={}
             for k, v in pairs(squares) do
                 if v.draft then
                     v.draft = false
@@ -2950,7 +2974,47 @@
             end
         end
     end, "event_functions")
+    function dr_clockwork_range(p)
+        local old_spr = spritesheet()
+        local function get_clockwork_range(p)
+            local danger = {}
+            local movement ={}
+            local px = p.sq.px
+            local py = p.sq.py
+            for index = 1, #p.behavior, 1 do 
+                if p.behavior[index].atk then
+                    for i = 2, #p.behavior[index], 2 do
+                        if gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py) and not gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py).p then
+                            add(danger, {p.behavior[index][i-1]+ px,p.behavior[index][i]+ py})
+                            px = px + p.behavior[index][i-1]
+                            py = py + p.behavior[index][i]
+                        end                        
+                    end
+                elseif p.behavior[index].move then
+                    for i = 2, #p.behavior[index], 2 do
+                        if gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py) and not gsq(p.behavior[index][i-1]+ px,p.behavior[index][i]+ py).p then
+                            add(movement, {p.behavior[index][i-1]+ px,p.behavior[index][i]+ py})
+                            px = px + p.behavior[index][i-1]
+                            py = py + p.behavior[index][i]
+                        end                        
+                    end
+                end
+            end
+            return danger, movement
+        end
+        local dan, mov = get_clockwork_range(p)
     
+        spritesheet("customtiles")
+        for v in all(dan) do
+            local sq= gsq(v[1], v[2])
+            sspr(784+cyc(16,2),0,16,16,sq.x,sq.y)
+        end
+        for v in all(mov) do
+            local sq= gsq(v[1], v[2])
+            sspr(816+cyc(16,2),0,16,16,sq.x,sq.y)
+        end
+        spritesheet(old_spr)
+    end
     defbtn("e",0,"k:e")
     defbtn("b",0,"k:b")
     defbtn("g",0,"k:g")
@@ -2967,13 +3031,22 @@
             end
         end
     
+        for v in all(cl_movement) do
+            spritesheet("customtiles")
+            local sq= gsq(v[1], v[2])
+            spr(1, sq.x, sq.y)
+            spritesheet(old_spr)
+        end
+        
         for v in all(cl_danger) do
             spritesheet("customtiles")
             local sq= gsq(v[1], v[2])
             spr(2, sq.x, sq.y)
             spritesheet(old_spr)
         end
-    
+        if rov and rov.cus_move and rov.behavior and #rov.behavior>0 and rov.behavior[1].id=="clockwork" then
+            dr_clockwork_range(rov)
+        end
         for k, v in pairs(squares) do
             if v.draft then
                 spritesheet("customtiles")
