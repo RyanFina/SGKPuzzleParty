@@ -200,21 +200,6 @@ function mod_range(e, sq)
 						if off_sq then
 							if off_sq.p == nil and beh.move then
 								goto_sq(e, off_sq)
-								local next_beh = kbeh ==#e.behavior and 1 or kbeh+1
-								local px =e.sq.px
-								local py =e.sq.py
-								if index == #beh then
-									for i = 2, #e.behavior[next_beh], 2 do
-										if gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i])
-										and not gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]).p
-										and e.behavior[next_beh].atk
-										then
-											add(cl_danger, {px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]})
-											px = px + e.behavior[next_beh][i-1]
-											py = py + e.behavior[next_beh][i]
-										end
-									end
-								end
 
 							elseif gsq(e.sq.px + beh[index-1], e.sq.py + beh[index]).p == hero and beh.atk then
 								goto_sq(e, hero.sq)
@@ -222,21 +207,6 @@ function mod_range(e, sq)
 									xpl_king(hero) 
 								end)
 								local next_beh = kbeh ==#e.behavior and 1 or kbeh+1
-								local px =e.sq.px
-								local py =e.sq.py
-								if index == #beh then
-									for i = 2, #e.behavior[next_beh], 2 do
-										if gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i])
-										and (not gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]).p 
-										or gsq(px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]).p == hero)
-										and e.behavior[next_beh].atk
-										then
-											add(cl_danger, {px + e.behavior[next_beh][i-1], py + e.behavior[next_beh][i]})
-											px = px + e.behavior[next_beh][i-1]
-											py = py + e.behavior[next_beh][i]
-										end
-									end
-								end
 								break
 							else
 								e.buffer = e.buffer + 1

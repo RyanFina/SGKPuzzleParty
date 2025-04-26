@@ -823,24 +823,49 @@
                 add(allies, p)
             end
             piece_transition(p,TEMPO)
+            p.turn = p.turn or 1
+            p.buffer = p.buffer or 0
             if p and p.behavior and #p.behavior>0 and p.behavior[1].id=="clockwork" then
-                local px = p.sq.px
-                local py = p.sq.py
-                if p.behavior[1].atk then
-                    for i = 2, #p.behavior[1], 2 do
-                        if gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py) and not gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py).p then
-                            add(cl_danger, {p.behavior[1][i-1]+ px,p.behavior[1][i]+ py})
-                            px = px + p.behavior[1][i-1]
-                            py = py + p.behavior[1][i]
-                        end                        
-                    end
-                elseif p.behavior[1].move then
-                    for i = 2, #p.behavior[1], 2 do
-                        if gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py) and not gsq(p.behavior[1][i-1]+ px,p.behavior[1][i]+ py).p then
-                            add(cl_movement, {p.behavior[1][i-1]+ px,p.behavior[1][i]+ py})
-                            px = px + p.behavior[1][i-1]
-                            py = py + p.behavior[1][i]
-                        end                        
+                p.upd= function()
+                    local px = p.sq.px
+                    local py = p.sq.py
+                    local ind =  (p.turn -1 -p.buffer) % p.tempo+1
+                    if p.behavior[ind] then
+                        if p.behavior[ind].atk then
+                            for i = 2, #p.behavior[ind], 2 do
+                                if gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i])
+                                and not gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i]).p
+                                then 
+                                    if not cl_danger["id "..(px + p.behavior[ind][i-1]).. (py + p.behavior[ind][i])] then
+                                        add(cl_danger, {px + p.behavior[ind][i-1], py + p.behavior[ind][i],id="id "..(px + p.behavior[ind][i-1]).. (py + p.behavior[ind][i])})
+                                        id_tbl(cl_danger)
+                                    end
+    
+                                    if not gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i]).danger["id ".. p.type..p.sq.px .. p.sq.py] then
+                                        p.id = "id ".. p.type..p.sq.px .. p.sq.py
+                                        add(gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i]).danger, p) 
+                                        id_tbl(gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i]).danger)
+                                    end
+                               
+                                    px = px + p.behavior[ind][i-1]
+                                    py = py + p.behavior[ind][i]
+                                else
+                                    break
+                                end
+                            end
+                        elseif p.behavior[ind].move then
+                            for i = 2, #p.behavior[ind], 2 do
+                                if gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i])
+                                and not gsq(px + p.behavior[ind][i-1], py + p.behavior[ind][i]).p
+                                then 
+                                    add(cl_movement, {px + p.behavior[ind][i-1], py + p.behavior[ind][i]})
+                                    px = px + p.behavior[ind][i-1]
+                                    py = py + p.behavior[ind][i]
+                                else
+                                    break
+                                end
+                            end
+                        end
                     end
                 end
             end
@@ -2706,7 +2731,7 @@
         end
     
         if btnp("h") then
-            _log(test.openSesame(PIECES))
+            _log(test.openSesame(cl_danger))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -2980,9 +3005,8 @@
             local danger = {}
             local movement ={}
             local px = p.sq.px
-            local py = p.sq.py
-           
-            for index = 1, #p.behavior, 1 do 
+            local py = p.sq.py 
+            for index = 1, #p.behavior, 1 do
                 local ind =  (p.turn -1 -p.buffer +index-1) % p.tempo+1
                 if p.behavior[ind].atk then
                     for i = 2, #p.behavior[ind], 2 do
@@ -2990,6 +3014,8 @@
                             add(danger, {p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py})
                             px = px + p.behavior[ind][i-1]
                             py = py + p.behavior[ind][i]
+                        else
+                            return danger, movement
                         end                        
                     end
                 elseif p.behavior[ind].move then
@@ -2998,6 +3024,8 @@
                             add(movement, {p.behavior[ind][i-1]+ px,p.behavior[ind][i]+ py})
                             px = px + p.behavior[ind][i-1]
                             py = py + p.behavior[ind][i]
+                        else
+                            return danger, movement
                         end                        
                     end
                 end
