@@ -5,7 +5,13 @@ local test = require("test.lua")
 gryphon_typ = #PIECES
 lang["piece_"..gryphon_typ] = "Gryphon"
 lang["short_piece_"..gryphon_typ] = "Gryphn"
-
+for i = 1, #PIECES, 1 do
+	PIECES[i].custom_dr= function(e,x,y,angle)
+		spritesheet("pieces")
+		spr(e.iron and 2*i-1 or 2*i-2, x, y)
+		spritesheet("gfx")
+	end
+end
 add(PIECES, {type=gryphon_typ,
 	name="gryphon", hp=4, tempo=4, danger=9, seek="rdist",
 	give_soul=true, hdy=0, cus_move=true,
@@ -46,7 +52,7 @@ add(PIECES, {type=nightrider_typ,
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
-		spr(e.iron and 3 or 2, x, y)
+		spr(e.iron and 15 or 14, x, y)
 	end,
 	custom_move_dr2 = function(x,y)
 		spritesheet("movemap")
@@ -67,7 +73,7 @@ add(PIECES, {type=minknight_typ,
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
-		spr(e.iron and 7 or 6, x, y)
+		spr(e.iron and 17 or 16, x, y)
 	end,
 	custom_move_dr2 = function(x,y)
 		spritesheet("movemap")
@@ -89,12 +95,8 @@ add(PIECES, {type=patrol_typ,
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
-		spr(e.iron and 1 or 0, x, y)
+		spr(e.iron and 19 or 18, x, y)
 	end,
-	-- custom_move_dr2 = function(x,y)
-	-- 	spritesheet("movemap")
-	-- 	spr(2, x, y, 2, 2)
-	-- end
 })
 function add_bsq(e, sq, m, a)
 	local x, y
@@ -220,7 +222,10 @@ function mod_range(e, sq)
 		end
 	end
 end
-
+function placeable(sq,type)
+	if not is_free(sq) then return false end
+ 	return not sq.moat
+end
 function clear_range(e)
 	dellist = {}
 	if (e.behavior) then
@@ -278,3 +283,4 @@ prepend("dr_movemap", function(e,x,y)
 		spritesheet("gfx")
 	end
 end, "some_pieces:dmm")
+

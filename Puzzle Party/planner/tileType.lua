@@ -1,9 +1,11 @@
 newsrf("planner/tiles.png", "customtiles")
 local test = require("test.lua")
+
 function dr_tile(id, x, y) -- draws minesweeper tiles
     local oldSp = spritesheet()
     spritesheet("customtiles")
-    sspr(id * 16, 0, 16, 16, x, y)
+    -- sspr(id * 16, 0, 16, 16, x, y)
+    spr(id, x,y)
     spritesheet(oldSp)
 end
 function is_subset(subset, superset)
@@ -150,6 +152,18 @@ tileType = {
     },
     normalize = {},
     void = {},
+    moat={
+        dr=function(_, x, y)
+            if get_square_at(x,y) and (get_square_at(x,y).px+get_square_at(x,y).py)%2 == 0 then
+                dr_tile(54, x, y)
+            elseif get_square_at(x,y) and (get_square_at(x,y).px+get_square_at(x,y).py)%2 ==1 then
+                dr_tile(55, x, y)
+            end 
+        end,
+        upd = function(sq)
+            sq.moat=true
+        end
+    },
     trap = {
         onEnter = function(e)
             if e ~= hero then
@@ -531,9 +545,9 @@ tileType = {
     pushup ={
         onEnter = function(e, sq)              
             if #events == 0  and not sq.entered then
-                if gsq(sq.px, sq.py-1) and (not gsq(sq.px, sq.py-1).p) then
+                if dsq(sq,3) and (not dsq(sq,3).p) then
                     if e ==hero then
-                        if not sub(gsq(sq.px, sq.py-1).tile_special,1,4) =="push" then
+                        if dsq(sq,3).tile_special and not sub(dsq(sq,3).tile_special,1,4) =="push" then
                             mode.push = true
                         end
 
@@ -542,9 +556,9 @@ tileType = {
                         db.life = 50
                         remove_buts()
                         
-                        wait(24, goto_sq, e, gsq(sq.px, sq.py-1))
+                        wait(24, goto_sq, e, dsq(sq,3))
                     else
-                        wait(23, function () goto_sq(e, gsq(sq.px, sq.py-1))  end)
+                        wait(23, function () goto_sq(e, dsq(sq,3))  end)
                     end
                 else
                     wait(30, play)
@@ -570,9 +584,9 @@ tileType = {
     pushdown={
         onEnter = function(e, sq)
             if #events == 0 and not sq.entered then
-                if gsq(sq.px, sq.py+1) and (not gsq(sq.px, sq.py+1).p) then
+                if dsq(sq, 1) and (not dsq(sq, 1).p) then
                     if e ==hero then
-                        if not sub(gsq(sq.px, sq.py+1).tile_special,1,4) =="push" then
+                        if dsq(sq, 1).tile_special and not sub(dsq(sq, 1).tile_special,1,4) =="push" then
                             mode.push = true
                         end
                         wait(15, setEnter, sq)
@@ -580,9 +594,9 @@ tileType = {
                         db.life = 50
                         remove_buts()
                         
-                        wait(24, goto_sq, e, gsq(sq.px, sq.py+1))
+                        wait(24, goto_sq, e, dsq(sq, 1))
                     else
-                        wait(23, function () goto_sq(e, gsq(sq.px, sq.py+1))  end)
+                        wait(23, function () goto_sq(e, dsq(sq, 1))  end)
                     end
                 else
                     wait(30, play)
@@ -608,9 +622,9 @@ tileType = {
     pushleft={
         onEnter = function(e, sq)
             if #events == 0 and not sq.entered then
-                if gsq(sq.px-1, sq.py) and (not gsq(sq.px-1, sq.py).p) then
+                if dsq(sq,2) and (not dsq(sq,2).p) then
                     if e ==hero then
-                        if not sub(gsq(sq.px-1, sq.py).tile_special,1,4) =="push" then
+                        if dsq(sq,2).tile_special and not sub(dsq(sq,2).tile_special,1,4) =="push" then
                             mode.push = true
                         end
 
@@ -619,9 +633,9 @@ tileType = {
                         db.life = 50
                         remove_buts()
                         
-                        wait(24, goto_sq, e, gsq(sq.px-1, sq.py))
+                        wait(24, goto_sq, e, dsq(sq,2))
                     else
-                        wait(23, function () goto_sq(e, gsq(sq.px-1, sq.py))  end)
+                        wait(23, function () goto_sq(e, dsq(sq,2))  end)
                     end
                 else
                     wait(30, play)
@@ -647,9 +661,9 @@ tileType = {
     pushright={
         onEnter = function(e, sq)
             if #events == 0 and not sq.entered then
-                if gsq(sq.px+1, sq.py) and (not gsq(sq.px+1, sq.py).p) then
+                if dsq(sq,0) and (not dsq(sq,0).p) then
                     if e ==hero then
-                        if not sub(gsq(sq.px+1, sq.py).tile_special,1,4) =="push" then
+                        if dsq(sq,0).tile_special and not sub(dsq(sq,0).tile_special,1,4) =="push" then
                             mode.push = true
                         end
 
@@ -658,9 +672,9 @@ tileType = {
                         db.life = 50
                         remove_buts()
                         
-                        wait(24, goto_sq, e, gsq(sq.px+1, sq.py))
+                        wait(24, goto_sq, e, dsq(sq,0))
                     else
-                        wait(23, function () goto_sq(e, gsq(sq.px+1, sq.py))  end)
+                        wait(23, function () goto_sq(e, dsq(sq,0))  end)
                     end
                 else
                     wait(30, play)
@@ -703,4 +717,5 @@ tileType = {
 
         end
     }
+
 }

@@ -1,11 +1,5 @@
 id = "puzzle"
--------------------------------- DEBUG OPTIONS ------------------------------------
 
--- If you have some debugging to do, set the chosen stat as 1 or the chosen value --
-
-	First_Room_Number=270			-- Determines on which floor you start when starting a new game
-	
-	-----------------------------------------------------------------------------------
 local test = require("test")
 base={}
 function trigger_events(idd)
@@ -54,7 +48,7 @@ function get_board_size()
 		end
 		
 		return 3,8
-	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 then
+	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 or mode.lvl ==100 then
 		return 10,10
 	else
 		-- restore gain from small board
@@ -81,21 +75,21 @@ function get_start_square()
 		end
 	end
 
-	if mode.lvl == 1 then
+	if mode.lvl <7 then
 		mode.destination = {}
-		music("lvl1",2, true)
+		music("floor1",2, true)
 		return gsq(3,2)
-	elseif mode.lvl == 2 then
+	elseif mode.lvl <12 then
 		mode.destination = {}
-		music("lvl2",2, true)
+		music("floor2",2, true)
 		return gsq(1,6)
-	elseif mode.lvl ==3 then
+	elseif mode.lvl <20 then
 		mode.destination = {}
-		music("lvl3",2, true)
+		music("floor3",2, true)
 		return gsq(2,4)
-	elseif mode.lvl ==4 then
+	elseif mode.lvl <34 then
 		mode.destination = {}
-		music("lvl4",2, true)
+		music("floor4",2, true)
 		return gsq(7,7)
 	elseif mode.lvl ==5 then
 		mode.destination = {}
@@ -118,7 +112,10 @@ function get_start_square()
 	elseif mode.lvl == 11 then
 		mode.destination = {}
 		return gsq(2,0)
-	elseif First_Room_Number and mode.lvl == First_Room_Number then
+	elseif mode.lvl ==100 then
+		mode.destination = {}
+		return gsq(3,0)
+	elseif START_LVL and mode.lvl == START_LVL then
 		mode.destination = {}
 		return gsq(4,7)
 	else
@@ -312,14 +309,8 @@ end
 function on_hero_death()
 	mode.clear_allies()
 	mode.del_entity()
-	if TEMPO <15 then
-        mode.base.TEMPO =1
-    elseif TEMPO >=15 then
-        mode.base.TEMPO =-1
-    end
 	if mode.lvl ==1 or mode.lvl ==7 then
 		mode.clear_history()
-
 		gameover()
 	else
 		local function puzzle_end()

@@ -9,11 +9,11 @@
     newsrf("cards.png", "samplemod_cards")
     newsrf("pieces.png", "samplemod_pieces")
     newsrf("dialogue.png", "dialogue")
-    
-    newmus("Background_Check.wav", "lvl1")
-    newmus("Moron.wav", "lvl2")
-    newmus("Needle_In_A_Haystack.wav", "lvl3")
-    newmus("Too Crazy.wav", "lvl4")
+    -- Puzzle music
+    newmus("Background_Check.wav", "floor1")
+    newmus("Moron.wav", "floor2")
+    newmus("Needle_In_A_Haystack.wav", "floor3")
+    newmus("Too Crazy.wav", "floor4")
     -- You may create a save bank for your mod with this function:
     -- newbnk(128, 64, 4)
     
@@ -23,7 +23,7 @@
     local replaceable = gimme("replaceable")
     local forbidden = gimme("forbidden")
     local autocall = gimme("autocall")
-    -- DEV = true 
+    DEV = true 
     
     test.openSesame(global, "Global")
     
@@ -41,7 +41,8 @@
     bestTries = {}
     
     require("planner/pieces.lua")
-    -- START_LVL=27
+    local new_cards = require("planner/cards.lua")
+    -- START_LVL=100
     require("planner/lang.lua")
     function add_lang()
         for key, v in pairs(english) do
@@ -556,7 +557,132 @@
             end
         end
     end
+    function ev_mk_play_button()
+        if not play_button then
+            play_button = mk_text_but(245,160,32,"PLAY",function ()
+                for p in all(bads) do
+                    if p and p.old_upd then
+                        p.upd = p.old_upd
+                    end
+                end
+            end)
+            play_button.ents[1].button = false
+        end
+        if not export_button then
+            export_button= mk_text_but(280,160,32,"EXPORT",function ()
+                -- Define the string to export
+                local function spawn_ev_code(is_instant)
+                    local spawn_info = ""
+                    for p in all(bads) do
+                        if p.type == patrol_typ and p.inert then
+                        else
+                            spawn_info = spawn_info .. 
+                            "\t{ev=ev_spawn, params={" .. 
+                            p.type .. "," ..tostr( p.bad ).. "," .. p.sq.px .. "," .. p.sq.py .. ", nil" ..
+                            ", {" ..
+                            (p.hp<p.hp_max and "hp=" .. p.hp .. ", " or "") ..
+                            (p.hp_max ~= PIECES[p.type+1].hp and "hp_max=" .. p.hp_max .. ", " or "") ..
+                            ("cd=" .. p.cd .. ", ") ..
+                            (p.tempo ~= PIECES[p.type+1].tempo and "tempo=" .. p.tempo .. ", " or "") ..
+                            (p.iron and "iron=" .. tostr(p.iron) .. ", " or "") ..
+                            (p.inert and "inert=" .. tostr(p.inert) .. ", " or "") ..
+                            (p.flying and "flying=" .. tostr(p.flying) .. ", " or "") ..
+                            (p.shield and "shield=" .. tostr(p.shield) .. ", " or "") ..
+                            (p.protect and "protect=" .. tostr(p.protect) .. ", " or "") ..
+                            (p.airy and "airy=" .. tostr(p.airy) .. ", " or "") ..
+                            (is_instant and "instant=" .. 1 .. ", " or "") ..
+                            "}" ..
+                            "}}," .. "\n"
+                        end
+                    end
+                    return spawn_info
+                end
+                
+                local function tile_code()
+                    local tile_info =""
+                    for sq in all(squares) do
+                        if sq.tile_special then
+                            tile_info= tile_info..
+                            "{'" ..
+                            sq.tile_special .. "'," ..
+                            sq.px .. "," ..
+                            sq.py .. "," ..
+                            "}," .. "\n"
+                        end
+                    end
+                    return tile_info
+                end
+                local content = '{ev_cond, params={"(1)SWAP_HERE"}},\n' ..
+                spawn_ev_code()..
+                "{ev_else}," .. "\n" ..
+                spawn_ev_code(true)..
+                "{ev_end}," .. "\n"
+                
+                -- Define the filename
+                local filename = "scene_export.lua"
     
+                -- Concatenate the full file path
+                local filepath = filename
+    
+                -- Write the string to the file (overwrites if it exists)
+                file(filepath, content)
+                _log("File created or overwritten at: " .. filepath)
+    
+                filename = "tile_export.lua"
+                filepath = filename
+                file(filepath, tile_code())
+                _log("File created or overwritten at: " .. filepath)
+                
+            end)
+            export_button.ents[1].button = false
+        end
+        event_nxt()
+    end
+    function ev_mk_card_set_button()
+        if not card_set_button then
+            card_set_button = mk_text_but(8,3,32,"SET",function ()
+                for sl in all(card_slots) do
+                    if sl.ca and sl.ca.team ==0 then
+                       tear_apart(sl.ca, nil) 
+                    end
+                end
+                if has_card("Pawn") then
+                    wait(TEMPO, add_card, "Normal")
+                    wait(TEMPO, add_card, "Up")
+                    wait(TEMPO, add_card, "Down")
+                    wait(TEMPO, add_card, "Left")
+                    wait(TEMPO, add_card, "Right")
+                    wait(TEMPO, add_card, "Push Up")
+                    wait(TEMPO, add_card, "Push Down")
+                    wait(TEMPO, add_card, "Push Left")
+                    wait(TEMPO, add_card, "Push Right")
+                    wait(TEMPO, add_card, "Moat")
+                elseif has_card("Up") then
+                    wait(TEMPO, add_card, "Patrol")
+                    wait(TEMPO, add_card, "Pawn")
+                    wait(TEMPO, add_card, "Knight")
+                    wait(TEMPO, add_card, "Bishop")
+                    wait(TEMPO, add_card, "Rook")
+                    wait(TEMPO, add_card, "Queen")
+                    wait(TEMPO, add_card, "King")
+                    wait(TEMPO, add_card, "Gryphon")
+                    wait(TEMPO, add_card, "Nightrider")
+                    wait(TEMPO, add_card, "Mini Knight")
+                end
+                wait(TEMPO*2, play)
+            end)
+            card_set_button.ents[1].button = false
+            event_nxt()
+        end
+    end
+    function ev_remove_play_button()
+        kl(play_button)
+        play_button = nil
+    
+        kl(export_button)
+        export_button = nil
+        event_nxt()
+    end
     function mk_square_trigger(ev, ...)
         local condition
         local trig = {}
@@ -881,6 +1007,211 @@
     function ev_set_hero_angle(ang)
         hero.force_ang=ang
         event_nxt()
+    end
+    function ev_create_edit_panel()
+        if edit_panel then
+            kl(edit_panel)
+            kl(edit_panel.iron_but)
+            kl(edit_panel.inert_but)
+            kl(edit_panel.flying_but)
+            kl(edit_panel.shield_but)
+            kl(edit_panel.airy_but)
+            kl(edit_panel.protect_but)
+    
+            edit_panel.iron_but = nil
+            edit_panel.inert_but = nil
+            edit_panel.flying_but = nil
+            edit_panel.shield_but = nil
+            edit_panel.airy_but = nil
+            edit_panel.protect_but = nil
+            edit_panel = nil
+        end
+        edit_panel = mke()
+        edit_panel.dp = DP_TOP
+        edit_panel.x, edit_panel.y = 245+80, 5
+        edit_panel.dr = dr_edit_panel
+        edit_panel.upd = function() 
+            if not mcl then return end
+            if not selected then return end
+            local function adjust_cd()
+                if mx > edit_panel.x + strwidth("CD: ") and
+                    mx < edit_panel.x + strwidth("CD: ") + strwidth(" - ") and
+                    my > edit_panel.y + 12 and
+                    my < edit_panel.y + 18 then
+                    selected.cd = selected.cd - 1
+                end
+                if mx>edit_panel.x+strwidth("CD:")+strwidth(" - ") + strwidth(tostr(selected.cd))  and 
+                    mx<edit_panel.x+strwidth("CD:")+strwidth(" - ") +strwidth(tostr(selected.cd))+strwidth(" + ") and 
+                    my>edit_panel.y+12 and 
+                    my<edit_panel.y +18 then
+                    if selected.cd < selected.tempo then
+                        selected.cd = selected.cd +1
+                    else
+                        sfx("wrong_shield")
+                    end
+                end
+            end
+    
+            local function adjust_tempo()
+                if mx > edit_panel.x + strwidth("TEMPO: ") and
+                    mx < edit_panel.x + strwidth("TEMPO: ") + strwidth(" - ") and
+                    my > edit_panel.y + 19 and
+                    my < edit_panel.y + 25 then
+                    if selected.tempo > 1 then
+                        selected.tempo = selected.tempo - 1
+                        if selected.cd > selected.tempo then
+                            selected.cd = selected.tempo
+                        end
+                    else
+                        sfx("wrong_shield")
+                    end
+                end
+                if mx>edit_panel.x+strwidth("tempo:")+strwidth(" - ") + strwidth(tostr(selected.tempo)) and 
+                    mx<edit_panel.x+strwidth("tempo:")+strwidth(" - ") +strwidth(tostr(selected.tempo))+strwidth(" + ") and
+                    my>edit_panel.y+19 and
+                    my<edit_panel.y +25 
+                then
+                    selected.tempo = selected.tempo +1
+                end
+            end
+            local function adjust_hp()
+                if mx > edit_panel.x + strwidth("HP: ") and
+                    mx < edit_panel.x + strwidth("HP: ") + strwidth(" - ") and
+                    my > edit_panel.y + 26 and
+                    my < edit_panel.y + 32 then
+                    if selected.hp > 1 then
+                        selected.hp = selected.hp - 1
+                    else
+                        sfx("wrong_shield")
+                    end
+                end
+                if mx>edit_panel.x+strwidth("HP:")+strwidth(" - ") + strwidth(tostr(selected.hp)) and 
+                    mx<edit_panel.x+strwidth("HP:")+strwidth(" - ") +strwidth(tostr(selected.hp))+strwidth(" + ") and 
+                    my>edit_panel.y+26 and 
+                    my<edit_panel.y +32 then
+                    if selected.hp < selected.hp_max then
+                        selected.hp = selected.hp +1
+                    else
+                        sfx("wrong_shield")
+                    end
+                end
+            end
+            local function adjust_hp_max()
+                if mx > edit_panel.x + strwidth("HP MAX: ") and
+                    mx < edit_panel.x + strwidth("HP MAX: ") + strwidth(" - ") and
+                    my > edit_panel.y + 33 and
+                    my < edit_panel.y + 39 then
+                    if selected.hp_max > 1 then
+                        selected.hp_max = selected.hp_max - 1
+                        if selected.hp_max < selected.hp then
+                            selected.hp = selected.hp_max
+                        end
+                    else
+                        sfx("wrong_shield")
+                    end
+                end
+                if mx>edit_panel.x+strwidth("HP MAX:")+strwidth(" - ") + strwidth(tostr(selected.hp_max)) and 
+                    mx<edit_panel.x+strwidth("HP MAX:")+strwidth(" - ") +strwidth(tostr(selected.hp_max))+strwidth(" + ") and 
+                    my>edit_panel.y+33 and 
+                    my<edit_panel.y +39 then
+                    selected.hp_max = selected.hp_max +1
+                end
+            end
+            adjust_cd()
+            adjust_tempo()
+            adjust_hp()
+            adjust_hp_max()
+        end
+        edit_panel.iron_but = mk_text_but(edit_panel.x+3,edit_panel.y+40,32,"IRON",function ()
+            if selected.type ==5 then return end
+            selected.iron = not selected.iron
+        end)
+        edit_panel.iron_but.ents[1].button = false
+        edit_panel.iron_but.dp = DP_TOP
+    
+        edit_panel.inert_but = mk_text_but(edit_panel.x+36,edit_panel.y+40,32,"INERT",function ()
+            selected.inert = not selected.inert
+        end)
+        edit_panel.inert_but.ents[1].button = false
+        edit_panel.inert_but.dp = DP_TOP
+    
+        edit_panel.flying_but = mk_text_but(edit_panel.x+3,edit_panel.y+55,32,"FLYING",function ()
+            selected.flying = not selected.flying
+        end)
+        edit_panel.flying_but.ents[1].button = false
+        edit_panel.flying_but.dp = DP_TOP
+    
+        edit_panel.shield_but = mk_text_but(edit_panel.x+36,edit_panel.y+55,32,"SHIELD",function ()
+            selected.shield = not selected.shield
+        end)
+        edit_panel.shield_but.ents[1].button = false
+        edit_panel.shield_but.dp = DP_TOP
+    
+        edit_panel.airy_but = mk_text_but(edit_panel.x+3,edit_panel.y+70,32,"airy",function ()
+            local old_upd = selected.upd
+            if selected.airy then
+                selected.upd = function()
+                    old_upd()
+                    selected.airy = false
+                end
+            else
+                selected.upd = function()
+                    old_upd()
+                    selected.airy = true
+                end
+            end
+        end)
+        edit_panel.airy_but.ents[1].button = false
+        edit_panel.airy_but.dp = DP_TOP
+    
+        edit_panel.protect_but = mk_text_but(edit_panel.x+36,edit_panel.y+70,32,"protect",function ()
+            selected.protect = not selected.protect
+        end)
+        edit_panel.protect_but.ents[1].button = false
+        edit_panel.protect_but.dp = DP_TOP
+    
+        event_nxt()
+    end
+    
+    
+    function dr_edit_panel(e,x,y)
+        rectfill(x,y,x+70,y+170,1)
+        rect(x,y,x+70,y+170,3)
+        hdclear(x,y,x+70,y+170)
+        if selected then
+            lprint(selected.name, lprint("Name: ", x+3, y+5, 4), y+5, 4)
+            lprint(" + ", lprint(selected.cd, lprint(" - ", lprint("cd:", x+3, y+12, 4), y+12, 4), y+12, 4), y+12, 4)
+            lprint(" + ", lprint(selected.tempo, lprint(" - ", lprint("tempo:", x+3, y+19, 4), y+19, 4), y+19, 4), y+19, 4)
+            lprint(" + ", lprint(selected.hp, lprint(" - ", lprint("HP:", x+3, y+26, 4), y+26, 4), y+26, 4), y+26, 4)
+            lprint(" + ", lprint(selected.hp_max, lprint(" - ", lprint("HP MAX:", x+3, y+33, 4), y+33, 4), y+33, 4), y+33, 4)
+    
+        end
+    end
+    
+    function show_edit_panel()
+        if not edit_panel or not edit_panel.iron_but then return end
+        if edit_panel.x ==245+80 then
+            mv(edit_panel,-80,0,25)
+            mv(edit_panel.iron_but,-80,0,25)
+            mv(edit_panel.inert_but,-80,0,25)
+            mv(edit_panel.flying_but, -80,0,25)
+            mv(edit_panel.shield_but, -80,0,25)
+            mv(edit_panel.airy_but,-80,0,25)
+            mv(edit_panel.protect_but, -80,0,25)
+        end
+    end
+    
+    function hide_edit_panel()
+        if not edit_panel or not edit_panel.iron_but then return end
+        if edit_panel.x ==245 then
+            mv(edit_panel,80,0,25)
+            mv(edit_panel.iron_but,80,0,25)
+            mv(edit_panel.inert_but,80,0,25)
+            mv(edit_panel.flying_but, 80,0,25)
+            mv(edit_panel.shield_but, 80,0,25)
+            mv(edit_panel.airy_but,80,0,25)
+            mv(edit_panel.protect_but, 80,0,25)
+        end
     end
     
     local intro_panel = ""
@@ -1370,11 +1701,7 @@
     
     function ev_transport(id, f)
         remove_buts()
-        if TEMPO <15 then
-            mode.base.TEMPO =1
-        elseif TEMPO >=15 then
-            mode.base.TEMPO =-1
-        end
+    
         if mode_id =="puzzle" then
             if (not bestTries[mode.lvl] or bestTries[mode.lvl] > mode.turns) 
             and is_subset({mode.lvl .. "_solved"}, history.room) 
@@ -1431,9 +1758,9 @@
         local global_history={}
         local room_history= {}
         for k, v in pairs(history) do
-            if k ~= "room" then
+            if k ~= "room" and v ~= "dev" then
                 add(global_history, v)
-            else
+            elseif k == "room" then
                 tbl_import(room_history, v)
             end
         end
@@ -1744,6 +2071,20 @@
         stack.grab =1
         event_nxt()
     end
+    function ev_cards(cards)
+        for card in all(cards) do
+            add_card(card)
+        end
+        event_nxt()
+    end
+    function ev_reset_cards()
+        for sl in all(card_slots) do
+            if sl.ca then
+               tear_apart(sl.ca, nil) 
+            end
+        end
+        event_nxt()
+    end
     function ev_steed(nums, is_stack_only)
         if not is_stack_only then
             mode.base.steed = nums
@@ -1776,6 +2117,7 @@
     end
     
     function ev_wraith(name, value)
+        value = value or 1
         local name_wraith = name.."_wraith"
         mode.base[name_wraith]= value
         event_nxt()
@@ -1840,6 +2182,7 @@
     end
     allies = {}
     history = {room={}}
+    
     
     -- TILES
     require("planner/tiles.lua")
@@ -2106,8 +2449,12 @@
                 end
     
                 for sq in all(ow_squares) do
+                    if sub(sq.tile_special,1,4) == "moat" then
+                        sq.moat = true
+                    end
                     local old_dr = sq.dr
                     local old_upd = sq.upd
+            
                     sq.dr = function(sq,x,y)
                         if sub(sq.tile_special,1,4) ~= "void" then
                             old_dr(sq,x,y)
@@ -2119,13 +2466,15 @@
                         if tileType[sq.tile_special] then
                             tileType[sq.tile_special].dr(sq,x,y)
                         end
+                        
                     end
                     sq.upd = function(sq,x,y)
                         old_upd(sq,x,y)
-    
+                 
                         if tileType[sq.tile_special] then
                             tileType[sq.tile_special].upd(sq,x,y)
                         end
+                        
                     end
                     for sq in all(Octiles) do
                         sq.upd = function (_, x,y)
@@ -2667,7 +3016,6 @@
             elseif conditionLeft and left and left.p then
                 if (not left.p.trigger or is_subset(left.p.trigger, history) and trigger_quality(left.p)[1] and (#left.p.no_trig==0 or not is_subset(left.p.no_trig, history) or trigger_quality(left.p)[2])) 
                 and left.p.event and #events ==0 and general_events[mode_id] then
-                    -- mode.trigger_events(mode_id,left.p.event[1])
                     if not left.p.repeatable then
                         for ev in all(left.p.event) do
                             mode.trigger_events(mode_id,ev)
@@ -2679,7 +3027,6 @@
                     repeatable(left)
                     left.p.prelude = nil
                 elseif left.p.prelude and #left.p.prelude ~=0 then
-                    -- mode.trigger_events(mode_id,left.p.prelude[1])
                     if not left.p.repeatable then
                         for pre in all(left.p.prelude) do
                             mode.trigger_events(mode_id,pre)
@@ -2700,12 +3047,10 @@
                     else
                         mode.trigger_events(mode_id,right.p.event[1])
                     end
-                    -- mode.trigger_events(mode_id,right.p.event[1])
                     play_events()
                     repeatable(right)
                     right.p.prelude = nil
                 elseif right.p.prelude and #right.p.prelude ~=0 then
-                    -- mode.trigger_events(mode_id,right.p.prelude[1])
                     if not right.p.repeatable then
                         for pre in all(right.p.prelude) do
                             mode.trigger_events(mode_id,pre)
@@ -2731,7 +3076,7 @@
         end
     
         if btnp("h") then
-            _log(test.openSesame(cl_danger))
+            _log(test.openSesame(PIECES))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -2751,7 +3096,7 @@
             if mode_id =="puzzle" then
                 if mode.lvl ==1 or mode.lvl ==7 then
                     return
-                elseif mode.lvl <7 then
+                elseif mode.lvl <7 or mode.lvl ==100 then
                     Return(1)
                 elseif mode.lvl <14 then
                     Return(7)
@@ -2771,6 +3116,19 @@
                 sq.draft= true
             elseif sq and sq.draft then
                 sq.draft= false
+            end
+        end
+        if DEV and rov and mcl then
+            selected= rov
+            if edit_panel then
+                show_edit_panel()
+            end
+            
+        end
+        if selected and not btn("k:lshift") and mcr  then
+            selected= nil
+            if edit_panel then
+                hide_edit_panel()
             end
         end
     end
@@ -2817,8 +3175,20 @@
                 if v.draft then
                     v.draft = false
                 end
+                if DEV and v.p and v.p.jail and v.p.old_upd then
+                    v.p.cd = v.p.cd-1
+                end
             end
         end},
+        on_bad_death = {function(p) 
+            if p == selected and edit_panel then
+                hide_edit_panel()
+            end
+        end},
+        on_hero_death= {function()
+            hide_edit_panel()
+        end}
+    
     }
     function set_autocall()
         for name,t in pairs(autocalls) do if #t > 0 then
@@ -2880,9 +3250,8 @@
         mode.px=0
         mode.py=0
         mode.destination = {}
-        mode.base = {chamber_max=1, firepower=40, firerange=3, spread=55, ammo_max=6, knockback=0,
-        soul_slot=0, gain={}, ruler = 99, ai_lvl=2,
-         TEMPO = -1
+        mode.base = {chamber_max=1, firepower=4, firerange=3, spread=55, ammo_max=6, knockback=0,
+        soul_slot=0, gain={}, ruler = 99, ai_lvl=2
         }
         mode.tbase = {}
         function mode.clear_allies()
@@ -2977,7 +3346,12 @@
                    bestTries = SAVE[id].bestTries
                 end
                 if SAVE[id].global_history then
-                    tbl_import(history, SAVE[id].global_history)
+                    if not DEV then
+                       tbl_import(history, SAVE[id].global_history) 
+                    else
+                       tbl_import(history, SAVE[id].global_history) 
+                        add(history, "dev")
+                    end
                 end
                 if SAVE[id].room_history then
                     tbl_import(history.room, SAVE[id].room_history)
@@ -2998,7 +3372,194 @@
                 SAVE[id]= {}
             end
         end
+    
     end, "event_functions")
+    function on_sq_but_init(but,sq)
+        
+    end
+    if DEV then
+        add(TEST_CARDS, "Pawn")
+        add(TEST_CARDS, "Knight")
+        add(TEST_CARDS, "Bishop")
+        add(TEST_CARDS, "Rook")
+        add(TEST_CARDS, "Queen")
+        add(TEST_CARDS, "King")
+        add(TEST_CARDS, "Gryphon")
+        add(TEST_CARDS, "Nightrider")
+        add(TEST_CARDS, "Mini Knight")
+        add(TEST_CARDS, "Patrol")
+    end
+    local drag_ca
+    function on_card_but_init(but,ca)
+        if ca.piece then
+            local x
+            local y
+            local dx
+            local dy
+            but.left_press = function()
+                if not but.drag then
+                    x = ca.x
+                    y = ca.y
+                    dx = x - mx
+                    dy = y - my
+                end
+            end
+            but.on_drag = function()
+                if drag_ca or ca.flipped then return end
+                drag_ca = ca
+                remove_buts()
+                local function f(self)
+                    local sq = get_square_at(mx,my)
+                    if not mlb then
+                        if placeable(sq,ca.type_piece) then
+                            if ca.skip_turn and check_folly_shields(hero.sq) then
+                                show_danger(hero.sq)
+                                ca.x = mx + dx
+                                ca.y = my + dy
+                                mvt(ca,x,y,8,play)
+                            else
+                                ca.x = x
+                                ca.y = y
+                                if ca.use then
+                                    local id = tostr(ca).."_used"
+                                    uplift({[id]=1}) -- this function will save import table to stack, additional value to already existed key
+                                    if stack[id] == ca.use then flip_card(ca) end
+                                elseif ca.undead then
+                                      
+                                else
+                                    flip_card(ca)
+                                end
+                                local p = new_piece(ca.type_piece,true,sq)
+                                p.cd = 1
+                                p.old_upd = p.upd
+                                p.upd = function() 
+                                    p.old_upd() 
+                                    sq.p.jail = true
+                                    sq.p.prison_bar = 1
+                                end
+                                selected = p
+                                if edit_panel then
+                                    show_edit_panel()
+                                end
+                                if ca.tear then p.ca = ca end
+                                fx_spawn(p,8)
+                                -- build_stack()
+                                wait(20,ca.skip_turn and opp_turn or play)
+                            end
+                        else
+                            -- invalid placement = snap card back to its original position
+                            ca.x = mx + dx
+                            ca.y = my + dy
+                            mvt(ca,x,y,8,play)
+                            sfx("wrong_shield")
+                        end
+                        kl(self)
+                        drag_ca = nil
+                        return
+                    end
+                    if sq then
+                        ca.x = MCW
+                        ca.y = MCH
+                    else
+                        ca.x = mx + dx
+                        ca.y = my + dy
+                    end
+                end
+                loop(f)
+            end
+        elseif ca.tile then
+            local x
+            local y
+            local dx
+            local dy
+            but.left_press = function()
+                if not but.drag then
+                    x = ca.x
+                    y = ca.y
+                    dx = x - mx
+                    dy = y - my
+                end
+            end
+            but.on_drag = function()
+                if drag_ca or ca.flipped then return end
+                drag_ca = ca
+                remove_buts()
+                local function f(self)
+                    local sq = get_square_at(mx,my)
+                    if not mlb then
+                        if sq then
+                            ca.x = x
+                            ca.y = y
+                            if not sq.old_dr or not sq.old_upd then
+                                sq.old_dr = sq.dr
+                                sq.old_upd = sq.upd
+                            end
+                          
+                            sq.upd = function(sq,x,y)
+                                sq.old_upd(sq,x,y)
+                                if sq.tile_special ~="moat" then
+                                    sq.moat = false
+                                end 
+                                if tileType[ca.type_tile] then
+                                    tileType[ca.type_tile].upd(sq,x,y)
+                                end
+                            end
+                            sq.dr =function (sq,x,y)
+                                sq.old_dr(sq,x,y)
+                                if sq.c_deep then --account for board spawn/despawn anim
+                                    local n = sq.c_deep
+                                    y = y + (3/4000)*pow(n,3) - (85/3000)*pow(n,2)
+                                end
+                                if tileType[ca.type_tile] then
+                                    tileType[ca.type_tile].dr(sq,x,y)
+                                end
+                            end
+                            sq.tile_special = ca.type_tile
+                            wait(20, play)
+                        else
+                            -- invalid placement = snap card back to its original position
+                            ca.x = mx + dx
+                            ca.y = my + dy
+                            mvt(ca,x,y,8,play)
+                            sfx("wrong_shield")
+                        end
+                        kl(self)
+                        drag_ca = nil
+                        return
+                    end
+                    if sq then
+                        ca.x = MCW
+                        ca.y = MCH
+                    else
+                        ca.x = mx + dx
+                        ca.y = my + dy
+                    end
+                end
+                loop(f)
+            end
+        end
+    end
+    append("play",function()
+        for e in all(ents) do if e.button then
+            if e.issq then
+                for sq in all(squares) do 
+                    if e.x == sq.x and e.y == sq.y then
+                        on_sq_but_init(e,sq)
+                        break
+                    end 
+                end
+            elseif e.iscard then
+                for sl in all(card_slots) do
+                    local ca = sl.ca
+                    if ca and e.x == sl.x and e.y == sl.y then
+                        on_card_but_init(e,ca)
+                        break
+                    end
+                end
+            end
+        end end
+    end,"terminal change buttons")
+    
     function dr_clockwork_range(p)
         local old_spr = spritesheet()
         local function get_clockwork_range(p)
@@ -3052,48 +3613,67 @@
     function draw_1()end
     function draw_2()
         local old_spr = spritesheet()
+        spritesheet("customtiles")
       
         for k, v in pairs(bads) do
             if v.inert or v.cd <= -100 then
-                spritesheet("customtiles")
                 spr(47, v.x, v.y)
-                spritesheet(old_spr)
+    
+            elseif v ==selected then
+    
+                spr(53, v.x, v.y)
+    
             end
         end
     
         for v in all(cl_movement) do
-            spritesheet("customtiles")
             local sq= gsq(v[1], v[2])
-            spr(1, sq.x, sq.y)
-            spritesheet(old_spr)
+            if sq then
+                spr(1, sq.x, sq.y)
+            end
+            
         end
         
         for v in all(cl_danger) do
-            spritesheet("customtiles")
             local sq= gsq(v[1], v[2])
-            spr(2, sq.x, sq.y)
-            spritesheet(old_spr)
+            if sq then
+                spr(2, sq.x, sq.y)
+            end
+           
         end
         if rov and rov.cus_move and rov.behavior and #rov.behavior>0 and rov.behavior[1].id=="clockwork" then
             dr_clockwork_range(rov)
         end
         for k, v in pairs(squares) do
             if v.draft then
-                spritesheet("customtiles")
                 spr(48, v.x, v.y)    
-                spritesheet(old_spr)
             end
         end
-      
+    
+        spritesheet(old_spr)
+    
     end
     function draw_3()end
-    function draw_4()end
+    function draw_4()
+        if drag_ca and get_square_at(mx,my) then
+            if drag_ca.piece then
+                spritesheet("pieces")
+                PIECES[drag_ca.type_piece+1].custom_dr({},mx-7,my-7)
+                spritesheet("gfx")
+            elseif drag_ca.tile then
+                spritesheet("customtiles")
+                tileType[drag_ca.type_tile].dr({},mx-7,my-7)
+                spritesheet("gfx")
+            end
+    
+        end
+    end
     function draw_5()
     
     end
     function draw_6()
         if btn("e") then for k,e in pairs(ents) do if not e.glacies then lprint(k,e.x,e.y,5, 0, 4) end end end
         if btn("b") then for k,e in pairs(ents) do if not e.glacies and e.button then lprint(k,e.x,e.y,5,0,4) end end end
-        if btn("g") then lprint(mx..","..my .. " " .. tostr(aim), 5, 173,5,0,4) end
+        if btn("g") then lprint(mx..","..my, 5, 173,5,0,4) end
     end
     
