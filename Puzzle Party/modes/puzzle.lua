@@ -74,22 +74,25 @@ function get_start_square()
 			end
 		end
 	end
-
 	if mode.lvl <7 then
-		mode.destination = {}
 		music("floor1",2, true)
-		return gsq(3,2)
-	elseif mode.lvl <12 then
-		mode.destination = {}
+	elseif mode.lvl <15 then
 		music("floor2",2, true)
-		return gsq(1,6)
-	elseif mode.lvl <20 then
-		mode.destination = {}
+	elseif mode.lvl<23 then
 		music("floor3",2, true)
-		return gsq(2,4)
-	elseif mode.lvl <34 then
+	end
+
+	if mode.lvl ==1 then
 		mode.destination = {}
-		music("floor4",2, true)
+		return gsq(3,2)
+	elseif mode.lvl ==2 then
+		mode.destination = {}
+		return gsq(1,6)
+	elseif mode.lvl ==3 then
+		mode.destination = {}
+		return gsq(2,4)
+	elseif mode.lvl ==4 then
+		mode.destination = {}
 		return gsq(7,7)
 	elseif mode.lvl ==5 then
 		mode.destination = {}
@@ -315,7 +318,7 @@ function on_hero_death()
 	else
 		local function puzzle_end()
 			for i = #mode.room_history(), 1, -1 do
-				if not (sub(mode.room_history()[i],-7,-1) =="_solved") and not (sub(mode.room_history()[i],-7,-1) =="_unlock") then
+				if not (sub(mode.room_history()[i],-7,-1) =="_solved") and not (sub(mode.room_history()[i],-7,-1) =="_unlock") and not mode.room_history()[i] == "dev" then
 					mode.del_room_history(mode.room_history()[i])
 				end
 			end

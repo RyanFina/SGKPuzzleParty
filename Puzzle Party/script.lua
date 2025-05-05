@@ -11,9 +11,8 @@
     newsrf("dialogue.png", "dialogue")
     -- Puzzle music
     newmus("Background_Check.wav", "floor1")
-    newmus("Moron.wav", "floor2")
-    newmus("Needle_In_A_Haystack.wav", "floor3")
-    newmus("Too Crazy.wav", "floor4")
+    newmus("Needle_In_A_Haystack.wav", "floor2")
+    newmus("Too Crazy.wav", "floor3")
     -- You may create a save bank for your mod with this function:
     -- newbnk(128, 64, 4)
     
@@ -572,6 +571,7 @@
                         end
                     end
                 end
+                mode.turns =1
             end)
             play_button.ents[1].button = false
         end
@@ -1720,7 +1720,7 @@
             end
         end
         for k = #history.room, 1, -1 do
-            if not (sub(history.room[k], -7, -1) == "_solved") and not (sub(mode.room_history()[k],-7,-1) =="_unlock") then
+            if not (sub(history.room[k], -7, -1) == "_solved") and not (sub(mode.room_history()[k],-7,-1) =="_unlock") and not history.room[k] =="dev" then
                 if history.room[k]=="kingkill" or history.room[k]=="pawnkill" 
                 or history.room[k]=="queenkill" or history.room[k]=="knightkill" 
                 or history.room[k]=="rookkill" or history.room[k]=="bishopkill" then
@@ -3085,7 +3085,7 @@
         end
     
         if btnp("h") then
-            _log(test.openSesame(PIECES))
+            _log(test.openSesame(history))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -3355,15 +3355,16 @@
                    bestTries = SAVE[id].bestTries
                 end
                 if SAVE[id].global_history then
-                    if not DEV then
-                       tbl_import(history, SAVE[id].global_history) 
-                    else
-                       tbl_import(history, SAVE[id].global_history) 
+                    tbl_import(history, SAVE[id].global_history) 
+                    if DEV then
                         add(history, "dev")
                     end
                 end
                 if SAVE[id].room_history then
                     tbl_import(history.room, SAVE[id].room_history)
+                    if DEV then
+                        add(history.room, "dev")
+                    end
                 end
                 if SAVE[id].global_count_ev then
                     tbl_import(count_event, SAVE[id].global_count_ev)
