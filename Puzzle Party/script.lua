@@ -562,7 +562,14 @@
             play_button = mk_text_but(245,160,32,"PLAY",function ()
                 for p in all(bads) do
                     if p and p.old_upd then
-                        p.upd = p.old_upd
+                        if p.airy then
+                            p.upd= function()
+                                p.old_upd()
+                                p.airy = true
+                            end
+                        else
+                            p.upd = p.old_upd
+                        end
                     end
                 end
             end)
@@ -1148,18 +1155,20 @@
         edit_panel.shield_but.dp = DP_TOP
     
         edit_panel.airy_but = mk_text_but(edit_panel.x+3,edit_panel.y+70,32,"airy",function ()
-            local old_upd = selected.upd
-            if selected.airy then
-                selected.upd = function()
+            local piece = selected
+            local old_upd = piece.upd
+            if piece.airy then
+                piece.upd = function()
                     old_upd()
-                    selected.airy = false
+                    piece.airy = false
                 end
             else
-                selected.upd = function()
+                piece.upd = function()
                     old_upd()
-                    selected.airy = true
+                    piece.airy = true
                 end
             end
+    
         end)
         edit_panel.airy_but.ents[1].button = false
         edit_panel.airy_but.dp = DP_TOP
