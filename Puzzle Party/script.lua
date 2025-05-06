@@ -584,7 +584,7 @@
                         if p.type == patrol_typ and p.inert then
                         else
                             spawn_info = spawn_info .. 
-                            "\t{ev=ev_spawn, params={" .. 
+                            "\t\t\t\t{ev=ev_spawn, params={" .. 
                             p.type .. "," ..tostr( p.bad ).. "," .. p.sq.px .. "," .. p.sq.py .. ", nil" ..
                             ", {" ..
                             (p.hp<p.hp_max and "hp=" .. p.hp .. ", " or "") ..
@@ -610,7 +610,7 @@
                     for sq in all(squares) do
                         if sq.tile_special then
                             tile_info= tile_info..
-                            "{'" ..
+                            "\t\t\t{'" ..
                             sq.tile_special .. "'," ..
                             sq.px .. "," ..
                             sq.py .. "," ..
@@ -619,25 +619,46 @@
                     end
                     return tile_info
                 end
-                local content = '{ev_cond, params={"(1)SWAP_HERE"}},\n' ..
+                local content = '\t\t\t{ev_cond, params={"(1)SWAP_HERE"}},\n' ..
                 spawn_ev_code()..
-                "{ev_else}," .. "\n" ..
+                "\t\t\t{ev_else}," .. "\n" ..
                 spawn_ev_code(true)..
-                "{ev_end}," .. "\n"
+                "\t\t\t{ev_end},"
                 
                 -- Define the filename
-                local filename = "scene_export.lua"
+                local filename = "scene.lua"
     
                 -- Concatenate the full file path
-                local filepath = filename
+                local filepath = "/planner/"..filename
     
-                -- Write the string to the file (overwrites if it exists)
-                file(filepath, content)
+                -- Read the file content
+                local file_content = file(filepath)
+    
+                -- Define the new content
+                local new_content = "dev={\n" .. content .. "\n\t\t}"
+    
+                -- Replace the entire `dev={...}` block with the new content
+                if file_content then
+                    file_content = sbs(file_content, "dev=%b{}", new_content)
+                else
+                    file_content = new_content
+                end
+    
+                -- Write the updated content back to the file
+                file(filepath, file_content)
                 _log("File created or overwritten at: " .. filepath)
     
-                filename = "tile_export.lua"
-                filepath = filename
-                file(filepath, tile_code())
+                content = tile_code()
+                filename = "tiles.lua"
+                filepath = "/planner/"..filename
+                file_content = file(filepath)
+                new_content = "dev={\n" .. content .. "\t\t}"
+                if file_content then
+                    file_content = sbs(file_content, "dev=%b{}", new_content)
+                else
+                    file_content = new_content
+                end
+                file(filepath, file_content)
                 _log("File created or overwritten at: " .. filepath)
                 
             end)
@@ -646,6 +667,18 @@
         event_nxt()
     end
     function ev_mk_card_set_button()
+        local function identify_card_set(cards)
+            for ca in all(cards) do
+                if has_card(ca) then
+                    return true
+                end 
+            end
+            return false
+        end
+        local card_sets= {
+            {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Nightrider", "Mini Knight"},
+            {"Normal","Up", "Down", "Left", "Right", "Push Up", "Push Down", "Push Left", "Push Right", "Moat"},
+        }
         if not card_set_button then
             card_set_button = mk_text_but(8,3,32,"SET",function ()
                 for sl in all(card_slots) do
@@ -653,7 +686,7 @@
                        tear_apart(sl.ca, nil) 
                     end
                 end
-                if has_card("Pawn") then
+                if identify_card_set(card_sets[1]) then
                     wait(TEMPO, add_card, "Normal")
                     wait(TEMPO, add_card, "Up")
                     wait(TEMPO, add_card, "Down")
@@ -664,7 +697,7 @@
                     wait(TEMPO, add_card, "Push Left")
                     wait(TEMPO, add_card, "Push Right")
                     wait(TEMPO, add_card, "Moat")
-                elseif has_card("Up") then
+                elseif identify_card_set(card_sets[2]) then
                     wait(TEMPO, add_card, "Patrol")
                     wait(TEMPO, add_card, "Pawn")
                     wait(TEMPO, add_card, "Knight")
@@ -2728,7 +2761,7 @@
             end
         end
     
-        for i = 1, count do
+        for i = 0, count do
             if events["move_" .. i] then
                 add(events["move_"..i], {ev=ev_transport, params={i}})
             else
@@ -2826,7 +2859,6 @@
         add_bound(v)
         add_move_events(v)
         add_emote_events(v)
-        
     end
     
     mode_id = ""
@@ -3194,11 +3226,19 @@
                 hide_edit_panel()
             end
         end},
-        on_hero_death= {function()
+        on_hero_death= {function ()
             hide_edit_panel()
-        end}
+            kl(play_button)
+            play_button = nil
+        
+            kl(export_button)
+            export_button = nil
     
+            kl(card_set_button)
+            card_set_button = nil
+        end}
     }
+    
     function set_autocall()
         for name,t in pairs(autocalls) do if #t > 0 then
             local foo = nil

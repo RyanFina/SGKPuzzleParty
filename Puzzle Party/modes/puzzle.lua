@@ -48,7 +48,7 @@ function get_board_size()
 		end
 		
 		return 3,8
-	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 or mode.lvl ==100 then
+	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 or mode.lvl ==0 then
 		return 10,10
 	else
 		-- restore gain from small board
@@ -81,8 +81,10 @@ function get_start_square()
 	elseif mode.lvl<23 then
 		music("floor3",2, true)
 	end
-
-	if mode.lvl ==1 then
+	if mode.lvl ==0 then
+		mode.destination = {}
+		return gsq(3,0)
+	elseif mode.lvl ==1 then
 		mode.destination = {}
 		return gsq(3,2)
 	elseif mode.lvl ==2 then
@@ -115,9 +117,6 @@ function get_start_square()
 	elseif mode.lvl == 11 then
 		mode.destination = {}
 		return gsq(2,0)
-	elseif mode.lvl ==100 then
-		mode.destination = {}
-		return gsq(3,0)
 	elseif START_LVL and mode.lvl == START_LVL then
 		mode.destination = {}
 		return gsq(4,7)

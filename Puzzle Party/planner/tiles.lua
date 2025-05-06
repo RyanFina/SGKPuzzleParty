@@ -1,5 +1,6 @@
 tiles = {
     ["puzzle"]={
+        dev={},
         [1]={
             {"lvl1",1,1},
             {"medal",1,2},
