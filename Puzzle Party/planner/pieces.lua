@@ -95,7 +95,7 @@ add(PIECES, {type=patrol_typ,
 	},
 	custom_dr = function(e,x,y,angle)
 		spritesheet("pieces")
-		spr(e.iron and 19 or 18, x, y)
+		spr(e.iron and 21 or 20, x, y)
 	end,
 })
 function add_bsq(e, sq, m, a)
@@ -222,7 +222,7 @@ function mod_range(e, sq)
 		end
 	end
 end
-function placeable(sq,type)
+function placeable(sq)
 	if not is_free(sq) then return false end
  	return not sq.moat
 end

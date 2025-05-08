@@ -5,7 +5,8 @@ general_events = {
             {ev=ev_create_edit_panel},
             {ev=ev_mk_play_button},
             {ev=ev_mk_card_set_button},
-            {ev=ev_offset_soul_slot},
+            {ev=ev_offset_soul_slot, params=400},
+
         },
         [1]={   
             {ev=ev_cond, params="not_dev"},

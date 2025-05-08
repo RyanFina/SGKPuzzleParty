@@ -478,12 +478,15 @@
         end
         event_nxt()
     end
-    function ev_offset_soul_slot()
+    function ev_offset_soul_slot(value)
         offSoul = mke()
         offSoul.upd = function()
             for v in all(ents) do
                 if v.x == 135+board_x then
                     v.x = 270
+                    if value then
+                        v.x = value
+                    end
                 end
             end    
         end
@@ -559,24 +562,78 @@
     function ev_mk_play_button()
         if not play_button then
             play_button = mk_text_but(245,160,32,"PLAY",function ()
-                for p in all(bads) do
-                    if p and p.old_upd then
-                        if p.airy then
-                            p.upd= function()
-                                p.old_upd()
+                if dev_save_state and #dev_save_state >0  then
+                    play_button.state = not play_button.state
+                else
+                    play_button.state = true
+                end
+    
+                if dev_save_state and #dev_save_state >0 and not play_button.state then
+    
+                    -- destroy all current bad pieces
+                    remove_buts()
+                    for p in all(bads) do
+                        xpl(p)
+                    end
+    
+                    -- move hero to the first position
+                    move_hero(gsq(dev_save_state[1][1],dev_save_state[1][2]))
+    
+                    -- recreate bad pieces at original positions and stats
+                    for i = 2, #dev_save_state, 1 do
+                        local piece = dev_save_state[i]
+                        local sq = gsq(piece[3],piece[4])
+                        local p = new_piece(piece[1],piece[2],sq)
+                        p.cd = piece.cd
+                        p.hp = piece.hp
+                        p.hp_max = piece.hp_max
+                        p.tempo = piece.tempo
+                        p.iron=piece.iron
+                        p.inert=piece.inert
+                        p.flying=piece.flying
+                        p.shield=piece.shield
+                        p.protect=piece.protect
+                        p.old_upd = p.upd
+                        p.airy=piece.airy
+    
+                        p.upd = function() 
+                            p.old_upd() 
+                            sq.p.jail = true
+                            sq.p.prison_bar = 1
+                            if piece.airy then
                                 p.airy = true
+                            else
+                                p.airy = false
                             end
-                        else
-                            p.upd = p.old_upd
+                        end
+                    end
+                    wait(TEMPO*2, play)
+                else
+                    for p in all(bads) do
+                        if p and p.old_upd then
+                            if p.airy then
+                                p.upd= function()
+                                    p.old_upd()
+                                    p.airy = true
+                                end
+                            else
+                                p.upd = p.old_upd
+                            end
                         end
                     end
                 end
+              
                 mode.turns =1
             end)
             play_button.ents[1].button = false
         end
         if not export_button then
             export_button= mk_text_but(280,160,32,"EXPORT",function ()
+                dev_save_state={}
+                add(dev_save_state, {hero.sq.px, hero.sq.py})   
+                for p in all(bads) do
+                    add(dev_save_state, {p.type, p.bad, p.sq.px, p.sq.py, hp=p.hp, hp_max=p.hp_max, cd=p.cd, tempo=p.tempo, iron=p.iron, inert=p.inert, flying=p.flying, shield=p.shield, protect=p.protect, airy=p.airy}) 
+                end
                 -- Define the string to export
                 local function spawn_ev_code(is_instant)
                     local spawn_info = ""
@@ -675,39 +732,30 @@
             end
             return false
         end
+    
         local card_sets= {
-            {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Nightrider", "Mini Knight"},
+            {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Nightrider", "Mini Knight", "Cannonball"},
             {"Normal","Up", "Down", "Left", "Right", "Push Up", "Push Down", "Push Left", "Push Right", "Moat"},
         }
+    
+        local function switch_set(set_order)
+            for i = 1, 10, 1 do
+                wait(TEMPO, add_card, card_sets[set_order][i])
+            end
+        end
+    
         if not card_set_button then
             card_set_button = mk_text_but(8,3,32,"SET",function ()
-                for sl in all(card_slots) do
-                    if sl.ca and sl.ca.team ==0 then
-                       tear_apart(sl.ca, nil) 
+                for ca in all(get_all_cards()) do
+                    if ca.team == 0 then
+                        tear_apart(ca, nil)
                     end
                 end
                 if identify_card_set(card_sets[1]) then
-                    wait(TEMPO, add_card, "Normal")
-                    wait(TEMPO, add_card, "Up")
-                    wait(TEMPO, add_card, "Down")
-                    wait(TEMPO, add_card, "Left")
-                    wait(TEMPO, add_card, "Right")
-                    wait(TEMPO, add_card, "Push Up")
-                    wait(TEMPO, add_card, "Push Down")
-                    wait(TEMPO, add_card, "Push Left")
-                    wait(TEMPO, add_card, "Push Right")
-                    wait(TEMPO, add_card, "Moat")
+                    switch_set(2)
                 elseif identify_card_set(card_sets[2]) then
-                    wait(TEMPO, add_card, "Patrol")
-                    wait(TEMPO, add_card, "Pawn")
-                    wait(TEMPO, add_card, "Knight")
-                    wait(TEMPO, add_card, "Bishop")
-                    wait(TEMPO, add_card, "Rook")
-                    wait(TEMPO, add_card, "Queen")
-                    wait(TEMPO, add_card, "King")
-                    wait(TEMPO, add_card, "Gryphon")
-                    wait(TEMPO, add_card, "Nightrider")
-                    wait(TEMPO, add_card, "Mini Knight")
+                    switch_set(1)
+    
                 end
                 wait(TEMPO*2, play)
             end)
@@ -1166,6 +1214,7 @@
             if selected.type ==5 then return end
             selected.iron = not selected.iron
         end)
+    
         edit_panel.iron_but.ents[1].button = false
         edit_panel.iron_but.dp = DP_TOP
     
@@ -1183,9 +1232,11 @@
     
         edit_panel.shield_but = mk_text_but(edit_panel.x+36,edit_panel.y+55,32,"SHIELD",function ()
             selected.shield = not selected.shield
+    
         end)
         edit_panel.shield_but.ents[1].button = false
         edit_panel.shield_but.dp = DP_TOP
+    
     
         edit_panel.airy_but = mk_text_but(edit_panel.x+3,edit_panel.y+70,32,"airy",function ()
             local piece = selected
@@ -1201,7 +1252,6 @@
                     piece.airy = true
                 end
             end
-    
         end)
         edit_panel.airy_but.ents[1].button = false
         edit_panel.airy_but.dp = DP_TOP
@@ -1211,7 +1261,6 @@
         end)
         edit_panel.protect_but.ents[1].button = false
         edit_panel.protect_but.dp = DP_TOP
-    
         event_nxt()
     end
     
@@ -2120,9 +2169,9 @@
         event_nxt()
     end
     function ev_reset_cards()
-        for sl in all(card_slots) do
-            if sl.ca then
-               tear_apart(sl.ca, nil) 
+        for ca in all(get_all_cards()) do
+            if ca then
+               tear_apart(ca, nil) 
             end
         end
         event_nxt()
@@ -3117,7 +3166,7 @@
         end
     
         if btnp("h") then
-            _log(test.openSesame(history))
+            _log(test.openSesame(CARDS))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -3446,6 +3495,16 @@
             local y
             local dx
             local dy
+            but.right_clic= function()
+                remove_buts()
+                tear_apart(ca,bind(add_any_card,{piece=1},play))
+                for oca in all(cards.pool) do
+                    if oca.id == ca.id then
+                        oca.n = oca.n + 1
+                        return
+                    end
+                end
+            end
             but.left_press = function()
                 if not but.drag then
                     x = ca.x
@@ -3461,41 +3520,23 @@
                 local function f(self)
                     local sq = get_square_at(mx,my)
                     if not mlb then
-                        if placeable(sq,ca.type_piece) then
-                            if ca.skip_turn and check_folly_shields(hero.sq) then
-                                show_danger(hero.sq)
-                                ca.x = mx + dx
-                                ca.y = my + dy
-                                mvt(ca,x,y,8,play)
-                            else
-                                ca.x = x
-                                ca.y = y
-                                if ca.use then
-                                    local id = tostr(ca).."_used"
-                                    uplift({[id]=1}) -- this function will save import table to stack, additional value to already existed key
-                                    if stack[id] == ca.use then flip_card(ca) end
-                                elseif ca.undead then
-                                      
-                                else
-                                    flip_card(ca)
-                                end
-                                local p = new_piece(ca.type_piece,true,sq)
-                                p.cd = 1
-                                p.old_upd = p.upd
-                                p.upd = function() 
-                                    p.old_upd() 
-                                    sq.p.jail = true
-                                    sq.p.prison_bar = 1
-                                end
-                                selected = p
-                                if edit_panel then
-                                    show_edit_panel()
-                                end
-                                if ca.tear then p.ca = ca end
-                                fx_spawn(p,8)
-                                -- build_stack()
-                                wait(20,ca.skip_turn and opp_turn or play)
+                        if placeable(sq) then
+                            ca.x = x
+                            ca.y = y
+                            local p = new_piece(ca.type_piece,true,sq)
+                            p.cd = 1
+                            p.old_upd = p.upd
+                            p.upd = function() 
+                                p.old_upd() 
+                                sq.p.jail = true
+                                sq.p.prison_bar = 1
                             end
+                            selected = p
+                            if edit_panel then
+                                show_edit_panel()
+                            end
+                            fx_spawn(p,8)
+                            wait(20, play)
                         else
                             -- invalid placement = snap card back to its original position
                             ca.x = mx + dx
@@ -3522,6 +3563,16 @@
             local y
             local dx
             local dy
+            but.right_clic= function()
+                remove_buts()
+                tear_apart(ca,bind(add_any_card,{tile=1},play))
+                for oca in all(cards.pool) do
+                    if oca.id == ca.id then
+                        oca.n = oca.n + 1
+                        return
+                    end
+                end
+            end
             but.left_press = function()
                 if not but.drag then
                     x = ca.x
@@ -3587,8 +3638,10 @@
                 end
                 loop(f)
             end
+    
         end
     end
+    
     append("play",function()
         for e in all(ents) do if e.button then
             if e.issq then
@@ -3715,7 +3768,6 @@
                 tileType[drag_ca.type_tile].dr({},mx-7,my-7)
                 spritesheet("gfx")
             end
-    
         end
     end
     function draw_5()
