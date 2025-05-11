@@ -418,27 +418,30 @@ function ev_mk_play_button()
                     local piece = dev_save_state[i]
                     local sq = gsq(piece[3],piece[4])
                     local p = new_piece(piece[1],piece[2],sq)
-                    p.cd = piece.cd
-                    p.hp = piece.hp
-                    p.hp_max = piece.hp_max
-                    p.tempo = piece.tempo
-                    p.iron=piece.iron
-                    p.inert=piece.inert
-                    p.flying=piece.flying
-                    p.shield=piece.shield
-                    p.protect=piece.protect
+                    
                     p.old_upd = p.upd
-                    p.airy=piece.airy
-
                     p.upd = function() 
                         p.old_upd() 
+                        p.cd = piece.cd
+                        p.hp = piece.hp
+                        p.hp_max = piece.hp_max
+                        p.tempo = piece.tempo
+                        p.iron=piece.iron
+                        p.inert=piece.inert
+                        p.flying=piece.flying
+                        p.shield=piece.shield
+                        p.protect=piece.protect
+                        p.airy = piece.airy
+
+                        p.pike = piece.pike
+                        if p.pike and #p.behavior == #(piece.behavior) then
+                            add(p.behavior, { id="line",1,1,2,  atk=1, fatality="pike" })
+                        elseif not p.pike and #p.behavior > #(piece.behavior) then
+                            deli(p.behavior, #p.behavior)
+                        end
+
                         sq.p.jail = true
                         sq.p.prison_bar = 1
-                        if piece.airy then
-                            p.airy = true
-                        else
-                            p.airy = false
-                        end
                     end
                 end
                 wait(TEMPO*2, play)
@@ -470,7 +473,7 @@ function ev_mk_play_button()
             dev_save_state={}
             add(dev_save_state, {hero.sq.px, hero.sq.py})   
             for p in all(bads) do
-                add(dev_save_state, {p.type, p.bad, p.sq.px, p.sq.py, hp=p.hp, hp_max=p.hp_max, cd=p.cd, tempo=p.tempo, iron=p.iron, inert=p.inert, flying=p.flying, shield=p.shield, protect=p.protect, airy=p.airy}) 
+                add(dev_save_state, {p.type, p.bad, p.sq.px, p.sq.py, hp=p.hp, hp_max=p.hp_max, cd=p.cd, tempo=p.tempo, iron=p.iron, inert=p.inert, flying=p.flying, shield=p.shield, protect=p.protect, airy=p.airy, behavior=p.behavior, pike= p.pike}) 
             end
             -- Define the string to export
             local function spawn_ev_code(is_instant)
