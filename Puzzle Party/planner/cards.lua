@@ -21,7 +21,24 @@ local new_cards = {
     { gid=18, team=0, n=50, pwe=1, id="Push Right", type_tile="pushright", tile=1},
     { gid=19, team=0, n=50, pwe=1, id="Moat", type_tile="moat", tile=1},
     { gid=20, team=0, n=50, pwe=1, id="Normal", type_tile="normalize", tile=1},
+    { gid=21, team=0, n=50, pwe=1, id="Number 1", type_tile="pc1", tile=1},
+    { gid=22, team=0, n=50, pwe=1, id="Number 2", type_tile="pc2", tile=1},
+    { gid=23, team=0, n=50, pwe=1, id="Number 3", type_tile="pc3", tile=1},
+    { gid=24, team=0, n=50, pwe=1, id="Number 4", type_tile="pc4", tile=1},
+    { gid=25, team=0, n=50, pwe=1, id="Number 5", type_tile="pc5", tile=1},
+    { gid=26, team=0, n=50, pwe=1, id="Number 6", type_tile="pc6", tile=1},
+    { gid=27, team=0, n=50, pwe=1, id="Number 7", type_tile="pc7", tile=1},
+    { gid=28, team=0, n=50, pwe=1, id="Number 8", type_tile="pc8", tile=1},
+    { gid=29, team=0, n=50, pwe=1, id="Number 9", type_tile="pc9", tile=1},
+    { gid=30, team=0, n=50, pwe=1, id="Medal", type_tile="medal", tile=1},
+    { gid=31, team=0, n=50, pwe=1, id="Vent", type_tile="vent", tile=1},
+    { gid=32, team=0, n=50, pwe=1, id="Stair", type_tile="stair", tile=1},
 
+    { gid=33, team=0, n=50, pwe=1, id="Barrel", type_entity="barrel", entity=1},
+    { gid=34, team=0, n=50, pwe=1, id="Wall", type_entity="wall", entity=1},
+    { gid=35, team=0, n=50, pwe=1, id="Plant", type_entity="plant", entity=1},
+    { gid=36, team=0, n=50, pwe=1, id="Door", type_entity="door", entity=1},
+    
 }
 
 local exclude = {

@@ -207,11 +207,6 @@ tileType = {
             dr_tile(2, x, y)
 
         end,
-        validSq = function()
-            local i = irnd(#squares - 8)
-            i = i + flr((i) / 7)
-            return squares[i + 1] -- not bottom row
-        end
     },
     slip = {
         onEnter = function(e, sq)
