@@ -16,38 +16,53 @@ function is_subset(subset, superset)
 
     return true
 end
-function generate_dummy(name, px,py, info)
-    local dummy = {
-        x = -1309,
-        y = -1309,
-        z=0,
-        tempo = 0,
-        behavior = {},
-        bad=true,
-        type=-1,
-        name=name,
-        hp=0,
-        hp_max=0,
-        dr=function () end,
-        upd=function () end,
-        mark ={},
-        sq=gsq(px,py),
-        nocarry = 1, 
-        knockback =100,
-        iron = 1, 
-        inert=1
-    }
-    if info then
-        tbl_import(dummy, info)
+function generate_dummy(name, px, py, info)
+    local square = gsq(px, py)
+
+    -- Function to create a new dummy table
+    local function create_dummy()
+        return {
+            x = -1309,
+            y = -1309,
+            z = 0,
+            tempo = 0,
+            behavior = {},
+            bad = true,
+            type = -1,
+            name = name,
+            hp = 0,
+            hp_max = 0,
+            dr = function() end,
+            upd = function() end,
+            mark = {},
+            sq = square,
+            nocarry = 1,
+            knockback = 100,
+            iron = 1,
+            inert = 1,
+        }
     end
-    gsq(px,py).p=dummy
-    gsq(px,py).upd=function ()
-        if not gsq(px,py).p then
-            gsq(px,py).p=dummy
+
+    -- Create a new dummy table for the square
+    square.p = create_dummy()
+
+    -- If info is provided, import it into the dummy table
+    if info then
+        tbl_import(square.p, info)
+    end
+
+    -- Update function for the square
+    square.upd = function()
+        if not square.p then
+            square.p = create_dummy()
+            if info then
+                tbl_import(square.p, info)
+            end
         end
 
+        -- Additional logic for updating the square
         for ent in all(ents) do
-            if ent.x == gsq(px,py).x and ent.y == gsq(px,py).y and ent.out and ent.over then
+            if ent.x == square.x and ent.y == square.y and ent.out and ent.over then
                 ent.over = nil
                 if stack.special == 'strafe' then
                     ent.right_clic = nil
@@ -59,15 +74,15 @@ function generate_dummy(name, px,py, info)
                         ent.on_drag = nil
                     end
                 end
-             
+
                 ent.out()
                 break
             end
         end
     end
-    return gsq(px,py)
-end
 
+    return square
+end
 entity = {
 
         altar={

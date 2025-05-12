@@ -2,9 +2,7 @@ newsrf("pieces.png", "pieces")
 newsrf("movemap.png", "movemap")
 
 local test = require("test.lua")
-gryphon_typ = #PIECES
-lang["piece_"..gryphon_typ] = "Gryphon"
-lang["short_piece_"..gryphon_typ] = "Gryphn"
+
 for i = 1, #PIECES, 1 do
 	PIECES[i].custom_dr= function(e,x,y,angle)
 		spritesheet("pieces")
@@ -12,6 +10,11 @@ for i = 1, #PIECES, 1 do
 		spritesheet("gfx")
 	end
 end
+
+gryphon_typ = #PIECES
+lang["piece_"..gryphon_typ] = "Gryphon"
+lang["short_piece_"..gryphon_typ] = "Gryphn"
+
 add(PIECES, {type=gryphon_typ,
 	name="gryphon", hp=4, tempo=4, danger=9, seek="rdist",
 	give_soul=true, hdy=0, cus_move=true,
@@ -223,8 +226,7 @@ function mod_range(e, sq)
 	end
 end
 function placeable(sq)
-	if not is_free(sq) then return false end
- 	return not sq.moat
+	return is_free(sq)
 end
 function clear_range(e)
 	dellist = {}

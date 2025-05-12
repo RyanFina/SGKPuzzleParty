@@ -966,6 +966,7 @@ function ev_create_edit_panel()
         kl(edit_panel.pike_but)
         kl(edit_panel.protect_but)
         kl(edit_panel.airy_but)
+        kl(edit_panel.pike_but)
 
         edit_panel.iron_but = nil
         edit_panel.inert_but = nil
@@ -974,6 +975,7 @@ function ev_create_edit_panel()
         edit_panel.pike_but = nil
         edit_panel.protect_but = nil
         edit_panel.airy_but = nil
+        edit_panel.pike_but = nil
         edit_panel = nil
     end
     edit_panel = mke()
@@ -3229,7 +3231,6 @@ autocalls = {
         end
         if p.x==-1309 and p.y==-1309 then
             mode.del_entity(p.name, p.wsq and p.wsq.px or p.psq.px, p.wsq and p.wsq.py or p.psq.py)
-
         end
     end},
     on_hero_death= {function ()
@@ -3484,8 +3485,8 @@ function on_card_but_init(but,ca)
                         p.old_upd = p.upd
                         p.upd = function() 
                             p.old_upd() 
-                            sq.p.jail = true
-                            sq.p.prison_bar = 1
+                            p.jail = true
+                            p.prison_bar = 1
                         end
                         selected = p
                         if edit_panel then
