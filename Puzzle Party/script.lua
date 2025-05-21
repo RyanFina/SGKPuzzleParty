@@ -22,7 +22,7 @@ local global = gimme("global")
 local replaceable = gimme("replaceable")
 local forbidden = gimme("forbidden")
 local autocall = gimme("autocall")
-DEV = true 
+DEV = true
 
 test.openSesame(global, "Global")
 
@@ -335,7 +335,24 @@ function ev_paralysis(num, is_stack_only)
     stack.paralysis = num
     event_nxt()
 end
-
+function ev_deathcount(num1, reset)
+    local lvl = mode.lvl
+    local eli = true
+    local death_count = mke()
+    function death_count:upd ()
+        if mode.lvl == lvl then
+            if mode.turns == num1 and eli then
+                eli = false
+                remove_buts()
+                wait(23, function()
+                    xpl_king(hero)
+                end)
+                kl(self)
+            end
+        end
+    end
+    event_nxt()
+end
 function ev_shotgun()
 	shotgun_pickup.anim_pickup = true
 	shotgun_pickup.t = 0
@@ -459,7 +476,33 @@ function ev_mk_play_button()
                     end
                 end
             end
-          
+            
+            if dev_save_tile and #dev_save_tile >0 then
+                for sq in all(squares) do
+                    if sq.tile_special then
+                        sq.upd = nil
+                        sq.tile_special = nil
+                        sq.dr = sq.old_dr
+                    end
+                end
+
+                for i = 1, #dev_save_tile, 1 do
+                    local sq = gsq(dev_save_tile[i][1],dev_save_tile[i][2])
+                    sq.tile_special = dev_save_tile[i][3]
+                    sq.old_dr = sq.dr
+                    sq.dr = function(sq,x,y)
+                        sq.old_dr(sq,x,y)
+                        if tileType[sq.tile_special] then
+                            tileType[sq.tile_special].dr(sq,x,y)
+                        end
+                    end
+                    sq.upd = function(sq)
+                        if tileType[sq.tile_special] then
+                            tileType[sq.tile_special].upd(sq)
+                        end
+                    end
+                end
+            end
             mode.turns =1
         end)
         play_button.ents[1].button = false
@@ -471,10 +514,17 @@ function ev_mk_play_button()
             end
             sfx("card_land")
             dev_save_state={}
+            dev_save_tile = {}
             add(dev_save_state, {hero.sq.px, hero.sq.py})   
             for p in all(bads) do
                 add(dev_save_state, {p.type, p.bad, p.sq.px, p.sq.py, hp=p.hp, hp_max=p.hp_max, cd=p.cd, tempo=p.tempo, iron=p.iron, inert=p.inert, flying=p.flying, shield=p.shield, protect=p.protect, airy=p.airy, behavior=p.behavior, pike= p.pike}) 
             end
+            for sq in all(squares) do
+                if sq.tile_special and sq.tile_special~="normalize" then
+                    add(dev_save_tile, {sq.px, sq.py, sq.tile_special})
+                end
+            end
+
             -- Define the string to export
             local function spawn_ev_code(is_instant)
                 local spawn_info = ""
@@ -590,7 +640,7 @@ function ev_mk_card_set_button()
     end
 
     local card_sets= {
-        {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Nightrider", "Mini Knight", "Cannonball"},
+        {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Cannonball", "Nightrider", "Mini Knight"},
         {"Normal","Up", "Down", "Left", "Right", "Push Up", "Push Down", "Push Left", "Push Right", "Moat","Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6", "Number 7", "Number 8", "Number 9", "Medal", "Vent", "Stair"},
         {"Wall", "Barrel", "Plant", "Door"}
     }
@@ -1808,6 +1858,7 @@ function ev_transport(id, f)
             add(global_history, v)
         elseif k == "room" then
             tbl_import(room_history, v)
+            del(room_history, "dev")
         end
     end
     local global_count_ev = {}
@@ -2227,8 +2278,12 @@ function ev_hop(dmg, is_stack_only)
     
 end
 allies = {}
-history = {room={}}
 
+if not DEV then
+    history = {room={}}
+else
+    history = {room={"dev"}, "dev"}
+end
 
 -- TILES
 require("planner/tiles.lua")
@@ -2579,11 +2634,6 @@ append("goto_sq", function (e, sq) --when a piece lands on a square
 	if sq.tile_special then
         tileType[sq.tile_special].onEnter(e, sq)
 	end 
-    -- reset move direction cursor if done push
-    if mode.push then
-        wait(30, play)
-        mode.push = false
-    end
 end, "tiletool_move_enter")
 
 -- TUTO
@@ -3394,7 +3444,6 @@ append("set_mode", function()
             return 0
         end
     end
-    mode.push = false
     function mode.loadSAVE(id)
         if SAVE[id] then
             if SAVE[id].bestTries then
@@ -3402,16 +3451,16 @@ append("set_mode", function()
             end
             if SAVE[id].global_history then
                 tbl_import(history, SAVE[id].global_history) 
-                if DEV then
-                    add(history, "dev")
-                end
             end
+            -- if DEV then
+            --     add(history, "dev")
+            -- end
             if SAVE[id].room_history then
                 tbl_import(history.room, SAVE[id].room_history)
-                if DEV then
-                    add(history.room, "dev")
-                end
             end
+            -- if DEV then
+            --     add(history.room, "dev")
+            -- end
             if SAVE[id].global_count_ev then
                 tbl_import(count_event, SAVE[id].global_count_ev)
             end
@@ -3424,6 +3473,7 @@ append("set_mode", function()
             if SAVE[id].completed_quest then
                 tbl_import(quest.completed, SAVE[id].completed_quest)
             end
+
         else
             SAVE[id]= {}
         end
@@ -3442,7 +3492,7 @@ if DEV then
     add(TEST_CARDS, "King")
     add(TEST_CARDS, "Gryphon")
     add(TEST_CARDS, "Nightrider")
-    add(TEST_CARDS, "Mini Knight")
+    add(TEST_CARDS, "Cannonball")
     add(TEST_CARDS, "Patrol")
 end
 local drag_ca

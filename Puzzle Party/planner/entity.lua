@@ -18,7 +18,6 @@ function is_subset(subset, superset)
 end
 function generate_dummy(name, px, py, info)
     local square = gsq(px, py)
-
     -- Function to create a new dummy table
     local function create_dummy()
         return {

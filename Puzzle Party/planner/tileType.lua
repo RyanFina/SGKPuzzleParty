@@ -116,7 +116,10 @@ local function setEnter(sq)
         sq.enter_turn = mode.turns
     end
 end
-
+local function continue_play()
+    remove_buts()
+    wait(TEMPO, play)
+end
 tileType = {
     phoenix = {
         dr = function(_, x, y)
@@ -538,27 +541,25 @@ tileType = {
         end
     },
     pushup ={
-        onEnter = function(e, sq)              
-            if #events == 0  and not sq.entered then
+        onEnter = function(e, sq)     
+            if #events ~= 0 then return end         
+            if not sq.entered then
                 if dsq(sq,3) and (not dsq(sq,3).p) then
-                    if e ==hero then
-                        if dsq(sq,3).tile_special and not sub(dsq(sq,3).tile_special,1,4) =="push" then
-                            mode.push = true
-                        end
-
-                        wait(15, setEnter, sq)
+                    wait(15, setEnter, sq)
+                    remove_buts()
+                    wait(24, goto_sq, e, dsq(sq,3))
+                    if e ==hero or e.bad==false or e.type ==9 then
                         local db = mk_bullet(-10, -10, 0, 0)
                         db.life = 50
-                        remove_buts()
-                        
-                        wait(24, goto_sq, e, dsq(sq,3))
-                    else
-                        wait(23, function () goto_sq(e, dsq(sq,3))  end)
-                    end
+                    elseif not (better_sub(dsq(sq,3).tile_special,1,4) =="push") then
+                        wait(TEMPO, play)
+                    end       
                 else
-                    wait(30, play)
-                    mode.push = false
+                    wait(TEMPO, setEnter, sq)
+                    continue_play()
                 end
+            else
+                wait(TEMPO, play)
             end  
            
         end,
@@ -578,25 +579,24 @@ tileType = {
     },
     pushdown={
         onEnter = function(e, sq)
-            if #events == 0 and not sq.entered then
+            if #events ~= 0 then return end
+            if not sq.entered then
                 if dsq(sq, 1) and (not dsq(sq, 1).p) then
-                    if e ==hero then
-                        if dsq(sq, 1).tile_special and not sub(dsq(sq, 1).tile_special,1,4) =="push" then
-                            mode.push = true
-                        end
-                        wait(15, setEnter, sq)
+                    wait(15, setEnter, sq)
+                    remove_buts()
+                    wait(24, goto_sq, e, dsq(sq,1))
+                    if e ==hero or e.bad==false or e.type ==9 then
                         local db = mk_bullet(-10, -10, 0, 0)
                         db.life = 50
-                        remove_buts()
-                        
-                        wait(24, goto_sq, e, dsq(sq, 1))
-                    else
-                        wait(23, function () goto_sq(e, dsq(sq, 1))  end)
+                    elseif not (better_sub(dsq(sq,1).tile_special,1,4) =="push") then
+                        wait(TEMPO, play)
                     end
                 else
-                    wait(30, play)
-                    mode.push = false
+                    wait(TEMPO, setEnter, sq)
+                    continue_play()
                 end
+            else
+                wait(TEMPO, play) 
             end  
         end,
         dr = function(sq, x, y)
@@ -616,26 +616,25 @@ tileType = {
     },
     pushleft={
         onEnter = function(e, sq)
-            if #events == 0 and not sq.entered then
+            if #events ~= 0 then return end
+            if not sq.entered then
                 if dsq(sq,2) and (not dsq(sq,2).p) then
-                    if e ==hero then
-                        if dsq(sq,2).tile_special and not sub(dsq(sq,2).tile_special,1,4) =="push" then
-                            mode.push = true
-                        end
+                    wait(15, setEnter, sq)
+                    remove_buts()
+                    wait(24, goto_sq, e, dsq(sq,2))
 
-                        wait(15, setEnter, sq)
+                    if e ==hero or e.bad==false or e.type ==9 then
                         local db = mk_bullet(-10, -10, 0, 0)
                         db.life = 50
-                        remove_buts()
-                        
-                        wait(24, goto_sq, e, dsq(sq,2))
-                    else
-                        wait(23, function () goto_sq(e, dsq(sq,2))  end)
+                    elseif not (better_sub(dsq(sq,2).tile_special,1,4) =="push") then
+                        wait(TEMPO, play)
                     end
                 else
-                    wait(30, play)
-                    mode.push = false
+                    wait(TEMPO, setEnter, sq)
+                    continue_play()
                 end
+            else
+                wait(TEMPO, play)
             end  
         end,
         dr = function(sq, x, y)
@@ -655,26 +654,24 @@ tileType = {
     },
     pushright={
         onEnter = function(e, sq)
-            if #events == 0 and not sq.entered then
+            if #events ~= 0 then return end
+            if not sq.entered then
                 if dsq(sq,0) and (not dsq(sq,0).p) then
-                    if e ==hero then
-                        if dsq(sq,0).tile_special and not sub(dsq(sq,0).tile_special,1,4) =="push" then
-                            mode.push = true
-                        end
-
-                        wait(15, setEnter, sq)
+                    wait(15, setEnter, sq)
+                    remove_buts()
+                    wait(24, goto_sq, e, dsq(sq,0))
+                    if e ==hero or e.bad==false or e.type ==9 then
                         local db = mk_bullet(-10, -10, 0, 0)
                         db.life = 50
-                        remove_buts()
-                        
-                        wait(24, goto_sq, e, dsq(sq,0))
-                    else
-                        wait(23, function () goto_sq(e, dsq(sq,0))  end)
+                    elseif not (better_sub(dsq(sq,0).tile_special,1,4) =="push") then
+                        wait(TEMPO, play)
                     end
                 else
-                    wait(30, play)
-                    mode.push = false
+                    wait(TEMPO, setEnter, sq)
+                    continue_play()
                 end
+            else
+                wait(TEMPO, play)
             end  
         end,
         dr = function(sq, x, y)
