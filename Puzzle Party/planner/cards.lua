@@ -38,7 +38,13 @@ local new_cards = {
     { gid=34, team=0, n=50, pwe=1, id="Wall", type_entity="wall", entity=1},
     { gid=35, team=0, n=50, pwe=1, id="Plant", type_entity="plant", entity=1},
     { gid=36, team=0, n=50, pwe=1, id="Door", type_entity="door", entity=1},
-    
+    { gid=37, team=0, n=50, pwe=1, id="Passcode", type_entity="passcode", entity=1},
+    { gid=38, team=0, n=50, pwe=1, id="Cursed Wall", type_entity="cursedwall", entity=1},
+    { gid=39, team=0, n=50, pwe=1, id="Cracked Wall", type_entity="crackedwall", entity=1},
+    { gid=40, team=0, n=50, pwe=1, id="Chest", type_entity="chest", entity=1},
+    { gid=41, team=0, n=50, pwe=1, id="Key Door", type_entity="keydoor", entity=1},
+    { gid=42, team=0, n=50, pwe=1, id="Key Door 2", type_entity="keydoor2", entity=1},
+
 }
 
 local exclude = {

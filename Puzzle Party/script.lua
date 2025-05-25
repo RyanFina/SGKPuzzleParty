@@ -86,9 +86,14 @@ function better_sub(str, start, finish)
         return sub(str, start, finish)
     else
         return nil
-    end
-    
+    end 
 end
+function add_content(tbl, new_content)
+	for _,v in ipairs(new_content) do
+		add(tbl, v)
+	end
+end
+
 function process_conditions(tbl)
     local function not_(str)
         str = sbs(str,"%b()", "")
@@ -409,17 +414,18 @@ end
 function ev_mk_play_button()
     if not play_button then
         play_button = mk_text_but(245,160,32,"PLAY",function ()
-            if edit_panel.state then
-                return
-            end
             sfx("card_land")
-            if dev_save_state and #dev_save_state >0  then
+ 
+            if dev_save_piece and #dev_save_piece >0  then
                 play_button.state = not play_button.state
             else
                 play_button.state = true
             end
+            if #bads ==0 then
+                play_button.state = false
+            end
 
-            if dev_save_state and #dev_save_state >0 and not play_button.state then
+            if dev_save_piece and #dev_save_piece >0 and not play_button.state then
 
                 -- destroy all current bad pieces
                 remove_buts()
@@ -428,11 +434,11 @@ function ev_mk_play_button()
                 end
 
                 -- move hero to the first position
-                move_hero(gsq(dev_save_state[1][1],dev_save_state[1][2]))
+                move_hero(gsq(dev_save_piece[1][1],dev_save_piece[1][2]))
 
                 -- recreate bad pieces at original positions and stats
-                for i = 2, #dev_save_state, 1 do
-                    local piece = dev_save_state[i]
+                for i = 2, #dev_save_piece, 1 do
+                    local piece = dev_save_piece[i]
                     local sq = gsq(piece[3],piece[4])
                     local p = new_piece(piece[1],piece[2],sq)
                     
@@ -451,9 +457,9 @@ function ev_mk_play_button()
                         p.airy = piece.airy
 
                         p.pike = piece.pike
-                        if p.pike and #p.behavior == #(piece.behavior) then
+                        if p.pike and #p.behavior == #(PIECES_TYPES[piece[1]].behavior) then
                             add(p.behavior, { id="line",1,1,2,  atk=1, fatality="pike" })
-                        elseif not p.pike and #p.behavior > #(piece.behavior) then
+                        elseif not p.pike and #p.behavior > #(PIECES_TYPES[piece[1]].behavior) then
                             deli(p.behavior, #p.behavior)
                         end
 
@@ -477,7 +483,7 @@ function ev_mk_play_button()
                 end
             end
             
-            if dev_save_tile and #dev_save_tile >0 then
+            if dev_save_tile and #dev_save_tile >0 and not play_button.state then
                 for sq in all(squares) do
                     if sq.tile_special then
                         sq.upd = nil
@@ -503,28 +509,55 @@ function ev_mk_play_button()
                     end
                 end
             end
+
+            if dev_save_entity and #dev_save_entity >0 and not play_button.state then
+                for i = 1, #dev_save_entity, 1 do
+                    add_event(mk_entity, dev_save_entity[i][1], dev_save_entity[i][2], dev_save_entity[i][3])
+                end
+                remove_buts()
+                play()
+            end
             mode.turns =1
         end)
         play_button.ents[1].button = false
     end
     if not export_button then
         export_button= mk_text_but(280,160,32,"EXPORT",function ()
-            if edit_panel.state then
-                return
-            end
             sfx("card_land")
-            dev_save_state={}
+            dev_save_piece={}
             dev_save_tile = {}
-            add(dev_save_state, {hero.sq.px, hero.sq.py})   
+            dev_save_entity = {}
+
+            -- Save hero and bad pieces
+            add(dev_save_piece, {hero.sq.px, hero.sq.py})   
             for p in all(bads) do
-                add(dev_save_state, {p.type, p.bad, p.sq.px, p.sq.py, hp=p.hp, hp_max=p.hp_max, cd=p.cd, tempo=p.tempo, iron=p.iron, inert=p.inert, flying=p.flying, shield=p.shield, protect=p.protect, airy=p.airy, behavior=p.behavior, pike= p.pike}) 
+                add(dev_save_piece, {p.type, p.bad, p.sq.px, p.sq.py, hp=p.hp, hp_max=p.hp_max, cd=p.cd, tempo=p.tempo, iron=p.iron, inert=p.inert, flying=p.flying, shield=p.shield, protect=p.protect, airy=p.airy, pike= p.pike}) 
             end
+
+            -- save tiles and entities
             for sq in all(squares) do
                 if sq.tile_special and sq.tile_special~="normalize" then
                     add(dev_save_tile, {sq.px, sq.py, sq.tile_special})
                 end
+                if sq.p and sq.p.type ==-1 and sq.p.x==-1309 and sq.p.y==-1309 then
+                    add(dev_save_entity, {sq.p.name, sq.px, sq.py})
+                end
             end
 
+            SAVE[mode_id].dev_save_piece = {}
+            for i = 1, #dev_save_piece, 1 do
+                SAVE[mode_id].dev_save_piece[i]= dev_save_piece[i]
+            end
+
+            SAVE[mode_id].dev_save_tile = {}
+            for i = 1, #dev_save_tile, 1 do
+                SAVE[mode_id].dev_save_tile[i]= dev_save_tile[i]
+            end
+
+            SAVE[mode_id].dev_save_entity = {}
+            for i = 1, #dev_save_entity, 1 do
+                SAVE[mode_id].dev_save_entity[i]= dev_save_entity[i]
+            end
             -- Define the string to export
             local function spawn_ev_code(is_instant)
                 local spawn_info = ""
@@ -629,6 +662,12 @@ function ev_mk_play_button()
     end
     event_nxt()
 end
+card_sets = 
+    {
+        {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Cannonball", "Nightrider", "Mini Knight"},
+        {"Normal","Up", "Down", "Left", "Right", "Push Up", "Push Down", "Push Left", "Push Right", "Moat","Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6", "Number 7", "Number 8", "Number 9", "Medal", "Vent", "Stair"},
+        {"Wall", "Barrel", "Plant", "Door","Passcode", "Cursed Wall","Cracked Wall","Chest","Key Door", "Key Door 2",}
+    }
 function ev_mk_card_set_button()
     local function identify_card_set(cards)
         for ca in all(cards) do
@@ -639,12 +678,6 @@ function ev_mk_card_set_button()
         return false
     end
 
-    local card_sets= {
-        {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Cannonball", "Nightrider", "Mini Knight"},
-        {"Normal","Up", "Down", "Left", "Right", "Push Up", "Push Down", "Push Left", "Push Right", "Moat","Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6", "Number 7", "Number 8", "Number 9", "Medal", "Vent", "Stair"},
-        {"Wall", "Barrel", "Plant", "Door"}
-    }
-
     local function switch_set(set_order)
         for i = 1, 10, 1 do
             if card_sets[set_order][i] then
@@ -653,6 +686,21 @@ function ev_mk_card_set_button()
         end
     end
 
+    local function save_set(set_order)
+        local display_cards ={}
+        for v in all(get_slot_cards()) do
+            add(display_cards, v.id)
+        end
+
+        for v in all(display_cards) do
+            del(card_sets[set_order], v)
+        end
+        local temp = card_sets[set_order]
+        add(display_cards, display_cards[#display_cards],1)
+        deli(display_cards, #display_cards)
+        add_content(display_cards, temp)
+        card_sets[set_order] = display_cards
+    end
     if not card_set_button then
         card_set_button = mk_text_but(8,3,32,"SET",function ()
             for ca in all(get_all_cards()) do
@@ -661,10 +709,13 @@ function ev_mk_card_set_button()
                 end
             end
             if identify_card_set(card_sets[1]) then
+                save_set(1)
                 switch_set(2)
             elseif identify_card_set(card_sets[2]) then
+                save_set(2)
                 switch_set(3)
             elseif identify_card_set(card_sets[3]) then
+                save_set(3)
                 switch_set(1)
             end
             wait(TEMPO*2, play)
@@ -1267,9 +1318,9 @@ end
 
 
 function dr_edit_panel(e,x,y)
-    rectfill(x,y,x+70,y+170,1)
-    rect(x,y,x+70,y+170,3)
-    hdclear(x,y,x+70,y+170)
+    rectfill(x,y,x+70,y+150,1)
+    rect(x,y,x+70,y+150,3)
+    hdclear(x,y,x+70,y+150)
     if selected then
         lprint(selected.name, lprint("Name: ", x+3, y+5, 4), y+5, 4)
         lprint(" + ", lprint(selected.cd, lprint(" - ", lprint("cd:", x+3, y+12, 4), y+12, 4), y+12, 4), y+12, 4)
@@ -2278,7 +2329,7 @@ function ev_hop(dmg, is_stack_only)
     
 end
 allies = {}
-
+-- history = {room={}}
 if not DEV then
     history = {room={}}
 else
@@ -2915,6 +2966,7 @@ for _, v in pairs(general_events) do
     add_emote_events(v)
 end
 
+-- Shortcuts
 mode_id = ""
 defbtn("f", 0, "k:f")
 defbtn("v",0,"k:v")
@@ -3171,8 +3223,7 @@ function upd()
     end
 
     if btnp("h") then
-        _log(test.openSesame(stack, "STACK"))
-        _log(test.openSesame(hero, "HERO"))
+        _log(test.openSesame(gsq(0,0), "gsq(0,0)"))
     local txt=""
     for k, v in pairs(bestTries) do
         txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -3452,15 +3503,16 @@ append("set_mode", function()
             if SAVE[id].global_history then
                 tbl_import(history, SAVE[id].global_history) 
             end
-            -- if DEV then
-            --     add(history, "dev")
-            -- end
+            if DEV then
+                add(history, "dev")
+            end
             if SAVE[id].room_history then
                 tbl_import(history.room, SAVE[id].room_history)
             end
-            -- if DEV then
-            --     add(history.room, "dev")
-            -- end
+            if DEV then
+                add(history.room, "dev")
+            end
+
             if SAVE[id].global_count_ev then
                 tbl_import(count_event, SAVE[id].global_count_ev)
             end
@@ -3473,7 +3525,15 @@ append("set_mode", function()
             if SAVE[id].completed_quest then
                 tbl_import(quest.completed, SAVE[id].completed_quest)
             end
-
+            if SAVE[id].dev_save_piece then
+                dev_save_piece= SAVE[id].dev_save_piece
+            end
+            if SAVE[id].dev_save_tile then
+                dev_save_tile= SAVE[id].dev_save_tile
+            end
+            if SAVE[id].dev_save_entity then
+                dev_save_entity= SAVE[id].dev_save_entity
+            end
         else
             SAVE[id]= {}
         end
@@ -3505,6 +3565,7 @@ function on_card_but_init(but,ca)
         but.right_clic= function()
             remove_buts()
             tear_apart(ca,bind(add_any_card,{piece=1},play))
+            
             for oca in all(cards.pool) do
                 if oca.id == ca.id then
                     oca.n = oca.n + 1
@@ -3526,7 +3587,27 @@ function on_card_but_init(but,ca)
 			remove_buts()
 			local function f(self)
 				local sq = get_square_at(mx,my)
-				if not mlb then
+                if mlb and btn("k:lshift") then
+                    if placeable(sq) then
+                        ca.x = x
+                        ca.y = y
+                        local p = new_piece(ca.type_piece,true,sq)
+                        p.cd = 1
+                        p.old_upd = p.upd
+                        p.upd = function() 
+                            p.old_upd() 
+                            p.jail = true
+                            p.prison_bar = 1
+                            p.sanctity = 1
+                        end
+                        selected = p
+                        if edit_panel then
+                            show_edit_panel()
+                        end
+                        fx_spawn(p,8)
+                        wait(20, play)
+                    end
+                elseif not mlb then
 					if placeable(sq) then
                         ca.x = x
                         ca.y = y
@@ -3537,6 +3618,7 @@ function on_card_but_init(but,ca)
                             p.old_upd() 
                             p.jail = true
                             p.prison_bar = 1
+                            p.sanctity = 1
                         end
                         selected = p
                         if edit_panel then
@@ -3594,7 +3676,38 @@ function on_card_but_init(but,ca)
             remove_buts()
             local function f(self)
                 local sq = get_square_at(mx,my)
-                if not mlb then
+                if mlb and btn("k:lshift") then
+                       if sq then
+                        ca.x = x
+                        ca.y = y
+                        if not sq.old_dr or not sq.old_upd then
+                            sq.old_dr = sq.dr
+                            sq.old_upd = sq.upd
+                        end
+                      
+                        sq.upd = function(sq,x,y)
+                            sq.old_upd(sq,x,y)
+                            if sq.tile_special ~="moat" then
+                                sq.moat = false
+                            end 
+                            if tileType[ca.type_tile] then
+                                tileType[ca.type_tile].upd(sq,x,y)
+                            end
+                        end
+                        sq.dr =function (sq,x,y)
+                            sq.old_dr(sq,x,y)
+                            if sq.c_deep then --account for board spawn/despawn anim
+                                local n = sq.c_deep
+                                y = y + (3/4000)*pow(n,3) - (85/3000)*pow(n,2)
+                            end
+                            if tileType[ca.type_tile] then
+                                tileType[ca.type_tile].dr(sq,x,y)
+                            end
+                        end
+                        sq.tile_special = ca.type_tile
+                        wait(20, play)
+                    end
+                elseif not mlb then
                     if sq then
                         ca.x = x
                         ca.y = y
@@ -3674,7 +3787,19 @@ function on_card_but_init(but,ca)
 			remove_buts()
 			local function f(self)
 				local sq = get_square_at(mx,my)
-				if not mlb then
+                if mlb and btn("k:lshift") then
+                    if placeable(sq) then
+                        ca.x = x
+                        ca.y = y
+                        if edit_panel then
+                            hide_edit_panel()
+                        end
+                        local mk = entity[ca.type_entity].new_entity(sq.px, sq.py)
+                        mk.dr = entity[ca.type_entity].dr
+                        mode.load_entities(mk)
+                        wait(20, play)
+					end
+				elseif not mlb then
 					if placeable(sq) then
                         ca.x = x
                         ca.y = y
@@ -3843,7 +3968,7 @@ function draw_5()
 
 end
 function draw_6()
-	if btn("e") then for k,e in pairs(ents) do if not e.glacies then lprint(k,e.x,e.y,5, 0, 4) end end end
-	if btn("b") then for k,e in pairs(ents) do if not e.glacies and e.button then lprint(k,e.x,e.y,5,0,4) end end end
-	if btn("g") then lprint(mx..","..my, 5, 173,5,0,4) end
+	if btn("e") and DEV then for k,e in pairs(ents) do if not e.glacies then lprint(k,e.x,e.y,5, 0, 4) end end end
+	if btn("b") and DEV then for k,e in pairs(ents) do if not e.glacies and e.button then lprint(k,e.x,e.y,5,0,4) end end end
+	if btn("g") and DEV then lprint(mx..","..my, 5, 173,5,0,4) end
 end
