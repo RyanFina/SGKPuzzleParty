@@ -253,6 +253,27 @@ function move_hero_ang(tsq,f,skip_reload,tempo)
 end
 
 function mk_entity(mk_e, px,py,ev)
+    local function check_event_index(px, py)
+        if room_event_entity[mode.lvl] then
+            for k, v in pairs(room_event_entity[mode.lvl]) do
+                if v[1] == px and v[2] == py then
+                    return v[3]
+                end
+            end
+        end
+    
+        return false
+    end
+    local function check_prelude_index(px,py)
+        if room_prelude_entity[mode.lvl] then
+            for k, v in pairs(room_prelude_entity[mode.lvl]) do
+                if v[1] == px and v[2] == py then
+                    return v[3]
+                end
+            end
+        end
+        return false
+    end
     local condition
     local trig = {}
     local nums = {}
@@ -273,7 +294,9 @@ function mk_entity(mk_e, px,py,ev)
                 local p = gsq(px,py).p
                 if ev then
                     p.event=ev.event or nil
+                    p.event_index =  check_event_index(px,py) and check_event_index(px,py) or 1
                     p.prelude = ev.prelude or nil
+                    p.prelude_index = check_prelude_index(px,py) and check_prelude_index(px,py) or 1
                     p.trigger=trig[1] or nil
                     p.repeatable=ev.repeatable or nil
                     p.no_trig= trig[2] or nil
@@ -544,17 +567,25 @@ function ev_mk_play_button()
                 end
             end
 
-            SAVE[mode_id].dev_save_piece = {}
+            -- save dev_save piece, tile and entity
+            if not SAVE[mode_id].dev_save_piece then
+                SAVE[mode_id].dev_save_piece = {}
+            end
             for i = 1, #dev_save_piece, 1 do
                 SAVE[mode_id].dev_save_piece[i]= dev_save_piece[i]
             end
 
-            SAVE[mode_id].dev_save_tile = {}
+            if not SAVE[mode_id].dev_save_tile then
+                SAVE[mode_id].dev_save_tile = {}
+            end
             for i = 1, #dev_save_tile, 1 do
                 SAVE[mode_id].dev_save_tile[i]= dev_save_tile[i]
             end
 
-            SAVE[mode_id].dev_save_entity = {}
+            if not SAVE[mode_id].dev_save_entity then
+                SAVE[mode_id].dev_save_entity = {}
+            end
+
             for i = 1, #dev_save_entity, 1 do
                 SAVE[mode_id].dev_save_entity[i]= dev_save_entity[i]
             end
@@ -965,6 +996,27 @@ function ev_spawn(type,isBad, x,y,tbl, info)
             break
         end
     end
+    local function check_event_index(px, py)
+        if room_event_entity[mode.lvl] then
+            for k, v in pairs(room_event_entity[mode.lvl]) do
+                if v[1] == px and v[2] == py then
+                    return v[3]
+                end
+            end
+        end
+        
+        return false
+    end
+    local function check_prelude_index(px,py)
+        if room_prelude_entity[mode.lvl] then
+            for k, v in pairs(room_prelude_entity[mode.lvl]) do
+                if v[1] == px and v[2] == py then
+                    return v[3]
+                end
+            end
+        end
+        return false
+    end
     local condition
     local trig = {}
     local nums = {}
@@ -979,7 +1031,9 @@ function ev_spawn(type,isBad, x,y,tbl, info)
         local p=new_piece(type, isBad , gsq(x,y))
 
         p.event= tbl and tbl.event or nil
+        p.event_index = check_event_index(x,y) and check_event_index(x,y) or 1
         p.prelude= tbl and tbl.prelude or nil  
+        p.prelude_index = check_prelude_index(x,y) and check_prelude_index(x,y) or 1
         p.repeatable= tbl and tbl.repeatable or nil
         p.trigger= trig[1] or nil
         p.no_trig = trig[2] or nil
@@ -1848,6 +1902,8 @@ pressR = false
 
 function ev_transport(id, f)
     remove_buts()
+    room_event_entity[mode.lvl] = {}
+    room_prelude_entity[mode.lvl] = {}
 
     if mode_id =="puzzle" then
         if (not bestTries[mode.lvl] or bestTries[mode.lvl] > mode.turns) 
@@ -1876,10 +1932,20 @@ function ev_transport(id, f)
     for sq in all(squares) do
         sq.upd= function()
         end
+
+        if sq.p then
+            if sq.p.event then
+                add(room_event_entity[mode.lvl], {sq.px, sq.py, sq.p.event_index})
+            end
+            if sq.p.prelude then
+                add(room_prelude_entity[mode.lvl], {sq.px, sq.py, sq.p.prelude_index})
+            end
+        end
     end
     entities={}
     cl_danger={}
     piece_souls={}
+    
     if chess_panel and ctrl_panel then
         mv(chess_panel,-100,0,30)
 	    mv(ctrl_panel,100,0,30)
@@ -1889,7 +1955,20 @@ function ev_transport(id, f)
     name_panel=nil
     mode.px= hero.sq.px
     mode.py= hero.sq.py
+
+    
     mode.lvl= id or mode.lvl+1
+    local px, py = mode.px, mode.py
+    if get_start_sq then
+        px, py = get_start_sq(mode.lvl, history, mode.destination, mode.px, mode.py)
+    end
+    hero_status= {
+        px, py, mode.lvl, mode.no_shotgun, ammo, chamber, stack.ammo_max, 
+        stack.chamber_max, stack.firepower, stack.firerange, stack.spread,
+        stack.special, stack.knockback, stack.pierce, stack.grenades_max, 
+        stack.grenade_dmg, stack.ammo_regen, stack.blood_bowl
+    }
+    SAVE[mode_id].hero_status = hero_status
 
     wait(90,fade_to,-4,20)
     local function next_room()
@@ -1939,6 +2018,18 @@ function ev_transport(id, f)
         SAVE[mode_id].room_count_ev = room_count_ev
         SAVE[mode_id].current_quest = current_quest
         SAVE[mode_id].completed_quest = completed_quest
+        if not SAVE[mode_id].room_event_entity then
+            SAVE[mode_id].room_event_entity = {}
+        end
+        if not SAVE[mode_id].room_prelude_entity then
+            SAVE[mode_id].room_prelude_entity = {}
+        end
+        for i = 1, #room_event_entity, 1 do
+            SAVE[mode_id].room_event_entity[i] = room_event_entity[i]
+        end
+        for i = 1, #room_prelude_entity, 1 do
+             SAVE[mode_id].room_prelude_entity[i] = room_prelude_entity[i]
+        end
     end
     end_level(f or next_room)
     if allies then 
@@ -1955,6 +2046,7 @@ function ev_transport(id, f)
             
         end, "souls"..k)
     end
+
 
     event_nxt()
 end
@@ -2329,13 +2421,15 @@ function ev_hop(dmg, is_stack_only)
     
 end
 allies = {}
--- history = {room={}}
+
 if not DEV then
     history = {room={}}
 else
     history = {room={"dev"}, "dev"}
 end
-
+room_event_entity = {}
+room_prelude_entity = {}
+hero_status = {}
 -- TILES
 require("planner/tiles.lua")
 require("planner/tileType.lua")
@@ -2977,12 +3071,8 @@ defbtn("mcm",0,"m:mb")
 
 function upd()
 	if btnp("f") then
-        if not hero then
-            return
-        end
-        if not hero.sq then
-            return
-        end
+        if not hero then return end
+        if not hero.sq then return end
 		local px, py = hero.sq.px, hero.sq.py        
         local x, y = mx-hero.sq.x, my- hero.sq.y
         local up = gsq(px, py-1)
@@ -2997,27 +3087,35 @@ function upd()
             if not type then
                 if pos.p.repeatable then
                     if pos.p.repeatable=="deplete" then
-                        deli(pos.p.event,1)
+                        -- deli(pos.p.event,1)
+                        pos.p.event_index = pos.p.event_index + 1
                     elseif pos.p.repeatable=="tough" and #pos.p.event>1 then
-                        deli(pos.p.event,1)
+                        -- deli(pos.p.event,1)
+                        pos.p.event_index = (pos.p.event_index == #pos.p.event) and #pos.p.event or pos.p.event_index + 1
                     elseif pos.p.repeatable=="recycle" then
-                        add(pos.p.event,pos.p.event[1])
-                        deli(pos.p.event,1)
+                        -- add(pos.p.event,pos.p.event[1])
+                        -- deli(pos.p.event,1)
+                        pos.p.event_index = pos.p.event_index % #pos.p.event+1
                     elseif pos.p.repeatable=="shuffle" then
-                        shuffle(pos.p.event)						
+                        -- shuffle(pos.p.event)	
+                        pos.p.event_index = irnd(#pos.p.event)+1				
                     end
                 end
             else
                 if pos.p.repeatable then
                     if pos.p.repeatable=="deplete" then
-                        deli(pos.p.prelude,1)
+                        -- deli(pos.p.prelude,1)
+                        pos.p.prelude_index = pos.p.prelude_index + 1
                     elseif pos.p.repeatable=="tough" and #pos.p.prelude>1 then
-                        deli(pos.p.prelude,1)
+                        -- deli(pos.p.prelude,1)
+                        pos.p.prelude_index = (pos.p.prelude_index == #pos.p.prelude) and #pos.p.prelude or pos.p.prelude_index + 1
                     elseif pos.p.repeatable=="recycle" then
-                        add(pos.p.prelude,pos.p.prelude[1])
-                        deli(pos.p.prelude,1)
+                        -- add(pos.p.prelude,pos.p.prelude[1])
+                        -- deli(pos.p.prelude,1)
+                        pos.p.prelude_index = pos.p.prelude_index % #pos.p.prelude+1
                     elseif pos.p.repeatable=="shuffle" then
-                        shuffle(pos.p.prelude)						
+                        -- shuffle(pos.p.prelude)	
+                        pos.p.prelude_index = irnd(#pos.p.prelude)+1						
                     end
                 end
             end
@@ -3118,7 +3216,8 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    mode.trigger_events(mode_id,up.p.event[1])
+                    -- mode.trigger_events(mode_id,up.p.event[1])
+                    mode.trigger_events(mode_id,up.p.event[up.p.event_index])
                 end
                 
                 play_events()
@@ -3130,7 +3229,8 @@ function upd()
                         mode.trigger_events(mode_id, pre)
                     end
                 else
-                    mode.trigger_events(mode_id,up.p.prelude[1])
+                    -- mode.trigger_events(mode_id,up.p.prelude[1])
+                    mode.trigger_events(mode_id,up.p.prelude[up.p.prelude_index])
                 end
                 
                 play_events()
@@ -3144,7 +3244,8 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    mode.trigger_events(mode_id,down.p.event[1])
+                    -- mode.trigger_events(mode_id,down.p.event[1])
+                    mode.trigger_events(mode_id,down.p.event[down.p.event_index])
                 end
                 play_events()
                 repeatable(down)
@@ -3155,7 +3256,8 @@ function upd()
                         mode.trigger_events(mode_id,pre)
                     end
                 else
-                    mode.trigger_events(mode_id,down.p.prelude[1])
+                    -- mode.trigger_events(mode_id,down.p.prelude[1])
+                    mode.trigger_events(mode_id,down.p.prelude[down.p.prelude_index])
                 end
                 play_events()
                 repeatable(down, true)
@@ -3168,7 +3270,8 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    mode.trigger_events(mode_id,left.p.event[1])
+                    -- mode.trigger_events(mode_id,left.p.event[1])
+                    mode.trigger_events(mode_id,left.p.event[left.p.event_index])
                 end
                 play_events()
                 repeatable(left)
@@ -3179,7 +3282,8 @@ function upd()
                         mode.trigger_events(mode_id,pre)
                     end
                 else
-                    mode.trigger_events(mode_id,left.p.prelude[1])
+                    -- mode.trigger_events(mode_id,left.p.prelude[1])
+                    mode.trigger_events(mode_id,left.p.prelude[left.p.prelude_index])
                 end
                 play_events()
                 repeatable(left, true)
@@ -3192,7 +3296,8 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    mode.trigger_events(mode_id,right.p.event[1])
+                    -- mode.trigger_events(mode_id,right.p.event[1])
+                    mode.trigger_events(mode_id,right.p.event[right.p.event_index])
                 end
                 play_events()
                 repeatable(right)
@@ -3203,7 +3308,8 @@ function upd()
                         mode.trigger_events(mode_id,pre)
                     end
                 else
-                    mode.trigger_events(mode_id,right.p.prelude[1])
+                    -- mode.trigger_events(mode_id,right.p.prelude[1])
+                    mode.trigger_events(mode_id,right.p.prelude[right.p.prelude_index])
                 end
                 play_events()
                 repeatable(right, true)
@@ -3223,7 +3329,7 @@ function upd()
     end
 
     if btnp("h") then
-        _log(test.openSesame(gsq(0,0), "gsq(0,0)"))
+        _log(test.openSesame(mode.history(), "mode.history"))
     local txt=""
     for k, v in pairs(bestTries) do
         txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -3363,7 +3469,7 @@ append("init_game",set_all_drawing,"terminal drawing")
 append("init_game",set_updater,"updater")
 append("set_mode", function()
     function mode.trigger_events(mode, id)
-        if general_events[mode][id] then
+        if id and general_events[mode][id] then
             for event in all(general_events[mode][id]) do
                 add_event(event.ev, unpack(event.params or {}))
             end
@@ -3400,7 +3506,10 @@ append("set_mode", function()
     function mode.set_id(id)
         mode_id = id
     end
-
+    
+    function mode.get_start_sq(f)
+        get_start_sq = f
+    end
     function mode.load_entities(entity)
         add(entities,entity)
     end
@@ -3534,11 +3643,45 @@ append("set_mode", function()
             if SAVE[id].dev_save_entity then
                 dev_save_entity= SAVE[id].dev_save_entity
             end
+            if SAVE[id].room_event_entity then
+                room_event_entity= SAVE[id].room_event_entity
+            end
+            if SAVE[id].room_prelude_entity then
+                room_prelude_entity= SAVE[id].room_prelude_entity
+            end
+            if SAVE[id].hero_status then
+                hero_status = SAVE[id].hero_status
+            end
         else
             SAVE[id]= {}
         end
     end
+    function mode.load_hero_stats()
+        local function func(name, new_stat)
+            mode.base[name] = new_stat
+        end
+        if hero_status and #hero_status > 0 then
+            add(mode.destination, {0,0, hero_status[1], hero_status[2]})
+            mode.no_shotgun = hero_status[4]
+            ammo = hero_status[5]
+            chamber = hero_status[6]
+            func("ammo_max", hero_status[7])
+            func("chamber_max", hero_status[8])
+            func("firepower", hero_status[9])
+            func("firerange", hero_status[10])
+            func("spread", hero_status[11])
+            func("special", hero_status[12])
+            func("knockback", hero_status[13])
+            func("pierce", hero_status[14])
+            func("grenades_max", hero_status[15])
+            func("grenade_dmg", hero_status[16])
+            func("ammo_regen", hero_status[17])
+            func("blood_bowl", hero_status[18])
+            return hero_status[3]
+        end
+    end
 
+  
 end, "event_functions")
 function on_sq_but_init(but,sq)
     
@@ -3604,7 +3747,7 @@ function on_card_but_init(but,ca)
                         if edit_panel then
                             show_edit_panel()
                         end
-                        fx_spawn(p,8)
+                        fx_spawn(p,3)
                         wait(20, play)
                     end
                 elseif not mlb then

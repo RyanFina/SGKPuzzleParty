@@ -20,20 +20,26 @@ tuto_intro=true
 function start()	
 	mode.set_id(id)
 	mode.loadSAVE(id)
-	base = mode.base
+	
+	mode.in_cine=true
+	mode.no_shotgun=true
+	mode.hide_cards=true
+	-- mode.lvl= START_LVL or 1
+	mode.lvl=mode.load_hero_stats() or (START_LVL or 1)
+	mode.get_start_sq(find_start_coords)
 	if tuto_intro and not DEV then
 		tuto_intro=false
 		init_vig({1,2,3},start)	
 		return
 	end
+
+	base = mode.base
 	base.gain={}
 	base.surrender=nil
 	init_game()
-	mode.lvl=START_LVL or 1
 	new_level()
-	mode.in_cine=true
-	mode.no_shotgun=true
-	mode.hide_cards=true
+
+	trigger_events("set_up")
 	trigger_events(mode.lvl)
 end
 
@@ -61,19 +67,56 @@ function get_board_size()
 	end
 
 end
-
+-- Helper function: returns px, py (does not modify state)
+function find_start_coords(lvl, history, destination, px, py)
+	if mode.lvl ==0 then
+		mode.destination = {}
+		return 3,0
+	elseif mode.lvl ==1 then
+		mode.destination = {}
+		return 3,2
+	elseif mode.lvl ==2 then
+		mode.destination = {}
+		return 1,6
+	elseif mode.lvl ==3 then
+		mode.destination = {}
+		return 2,4
+	elseif mode.lvl ==4 then
+		mode.destination = {}
+		return 7,7
+	elseif mode.lvl ==5 then
+		mode.destination = {}
+		return 7,7
+	elseif mode.lvl ==6 then
+		mode.destination = {}
+		return 7,7
+	elseif mode.lvl == 7 then
+		mode.destination = {}
+		return 1,2
+	elseif mode.lvl ==8 then
+		mode.destination = {}
+		return 2,9
+	elseif mode.lvl == 9 then
+		mode.destination = {}
+		return 4,3
+	elseif mode.lvl == 10 then
+		mode.destination = {}
+		return 5,9
+	elseif mode.lvl == 11 then
+		mode.destination = {}
+		return 2,0
+	elseif START_LVL and mode.lvl == START_LVL then
+		mode.destination = {}
+		return 4,7
+    elseif destination then
+        for v in all(destination) do
+            if px == v[1] and py == v[2] then
+                return v[3], v[4]
+            end
+        end
+    end
+end
 function get_start_square()
-	local function destination()
-		for v in all(mode.destination) do
-			if mode.px == v[1] then
-				if mode.py ==v[2] then
-					local sq= gsq(v[3],v[4])
-					mode.destination = {}
-					return sq
-				end
-			end
-		end
-	end
 	if mode.lvl <7 then
 		music("floor1",2, true)
 	elseif mode.lvl <15 then
@@ -81,48 +124,15 @@ function get_start_square()
 	elseif mode.lvl<23 then
 		music("floor3",2, true)
 	end
-	if mode.lvl ==0 then
-		mode.destination = {}
-		return gsq(3,0)
-	elseif mode.lvl ==1 then
-		mode.destination = {}
-		return gsq(3,2)
-	elseif mode.lvl ==2 then
-		mode.destination = {}
-		return gsq(1,6)
-	elseif mode.lvl ==3 then
-		mode.destination = {}
-		return gsq(2,4)
-	elseif mode.lvl ==4 then
-		mode.destination = {}
-		return gsq(7,7)
-	elseif mode.lvl ==5 then
-		mode.destination = {}
-		return gsq(7,7)
-	elseif mode.lvl ==6 then
-		mode.destination = {}
-		return gsq(7,7)
-	elseif mode.lvl == 7 then
-		mode.destination = {}
-		return gsq(1,2)
-	elseif mode.lvl ==8 then
-		mode.destination = {}
-		return gsq(2,9)
-	elseif mode.lvl == 9 then
-		mode.destination = {}
-		return gsq(4,3)
-	elseif mode.lvl == 10 then
-		mode.destination = {}
-		return gsq(5,9)
-	elseif mode.lvl == 11 then
-		mode.destination = {}
-		return gsq(2,0)
-	elseif START_LVL and mode.lvl == START_LVL then
-		mode.destination = {}
-		return gsq(4,7)
-	else
-		return destination()
-	end
+	local px, py = find_start_coords(
+	mode.lvl,
+	mode.history(),
+	mode.destination,
+	mode.px,
+	mode.py
+    )
+	mode.destination = {}
+	return gsq(px, py)
 end
 
 function on_piece_move(e)
@@ -264,7 +274,9 @@ function on_piece_move(e)
 end
 
 function on_empty()
-	-- mode.room_history("empty")
+	-- if not mode.room_history()["empty"] then
+	-- 	mode.room_history("empty")
+	-- end
 	return true
 end
 function on_king_death()
