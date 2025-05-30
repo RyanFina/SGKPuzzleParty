@@ -338,15 +338,16 @@ function ev_souls(typ, isUnlimited)
 end
 function ev_offset_soul_slot(value)
     offSoul = mke()
+    local i = 0
     offSoul.upd = function()
         for v in all(ents) do
-            if v.x == 135+board_x then
+            if v.x == 135+board_x or v.x == 135+ 16 +board_x then
                 v.x = 270
                 if value then
                     v.x = value
                 end
             end
-        end    
+        end  
     end
 
     offSoul.dr = function()
@@ -1898,7 +1899,7 @@ function ev_repeat_after_me(str)
     log(str)
     event_nxt()
 end
-pressR = false
+pressZ = false
 
 function ev_transport(id, f)
     remove_buts()
@@ -1908,7 +1909,7 @@ function ev_transport(id, f)
     if mode_id =="puzzle" then
         if (not bestTries[mode.lvl] or bestTries[mode.lvl] > mode.turns) 
         and is_subset({mode.lvl .. "_solved"}, history.room) 
-        and not pressR
+        and not pressZ
         then
             bestTries[mode.lvl] = mode.turns
         end
@@ -2038,7 +2039,7 @@ function ev_transport(id, f)
         end
     end
     mode.clear_allies()
-    pressR = false
+    pressZ = false
     kl(offSoul)
 
     for k, v in pairs(PIECES_TYPES) do
@@ -3065,7 +3066,7 @@ mode_id = ""
 defbtn("f", 0, "k:f")
 defbtn("v",0,"k:v")
 defbtn("h",0,"k:h")
-defbtn("r",0,"k:r")
+defbtn("z",0,"k:z")
 defbtn("x",0,"k:x")
 defbtn("mcm",0,"m:mb")
 
@@ -3087,34 +3088,24 @@ function upd()
             if not type then
                 if pos.p.repeatable then
                     if pos.p.repeatable=="deplete" then
-                        -- deli(pos.p.event,1)
                         pos.p.event_index = pos.p.event_index + 1
                     elseif pos.p.repeatable=="tough" and #pos.p.event>1 then
-                        -- deli(pos.p.event,1)
                         pos.p.event_index = (pos.p.event_index == #pos.p.event) and #pos.p.event or pos.p.event_index + 1
                     elseif pos.p.repeatable=="recycle" then
-                        -- add(pos.p.event,pos.p.event[1])
-                        -- deli(pos.p.event,1)
                         pos.p.event_index = pos.p.event_index % #pos.p.event+1
                     elseif pos.p.repeatable=="shuffle" then
-                        -- shuffle(pos.p.event)	
                         pos.p.event_index = irnd(#pos.p.event)+1				
                     end
                 end
             else
                 if pos.p.repeatable then
                     if pos.p.repeatable=="deplete" then
-                        -- deli(pos.p.prelude,1)
                         pos.p.prelude_index = pos.p.prelude_index + 1
                     elseif pos.p.repeatable=="tough" and #pos.p.prelude>1 then
-                        -- deli(pos.p.prelude,1)
                         pos.p.prelude_index = (pos.p.prelude_index == #pos.p.prelude) and #pos.p.prelude or pos.p.prelude_index + 1
                     elseif pos.p.repeatable=="recycle" then
-                        -- add(pos.p.prelude,pos.p.prelude[1])
-                        -- deli(pos.p.prelude,1)
                         pos.p.prelude_index = pos.p.prelude_index % #pos.p.prelude+1
                     elseif pos.p.repeatable=="shuffle" then
-                        -- shuffle(pos.p.prelude)	
                         pos.p.prelude_index = irnd(#pos.p.prelude)+1						
                     end
                 end
@@ -3216,7 +3207,6 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    -- mode.trigger_events(mode_id,up.p.event[1])
                     mode.trigger_events(mode_id,up.p.event[up.p.event_index])
                 end
                 
@@ -3229,7 +3219,6 @@ function upd()
                         mode.trigger_events(mode_id, pre)
                     end
                 else
-                    -- mode.trigger_events(mode_id,up.p.prelude[1])
                     mode.trigger_events(mode_id,up.p.prelude[up.p.prelude_index])
                 end
                 
@@ -3244,7 +3233,6 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    -- mode.trigger_events(mode_id,down.p.event[1])
                     mode.trigger_events(mode_id,down.p.event[down.p.event_index])
                 end
                 play_events()
@@ -3256,7 +3244,6 @@ function upd()
                         mode.trigger_events(mode_id,pre)
                     end
                 else
-                    -- mode.trigger_events(mode_id,down.p.prelude[1])
                     mode.trigger_events(mode_id,down.p.prelude[down.p.prelude_index])
                 end
                 play_events()
@@ -3270,7 +3257,6 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    -- mode.trigger_events(mode_id,left.p.event[1])
                     mode.trigger_events(mode_id,left.p.event[left.p.event_index])
                 end
                 play_events()
@@ -3282,7 +3268,6 @@ function upd()
                         mode.trigger_events(mode_id,pre)
                     end
                 else
-                    -- mode.trigger_events(mode_id,left.p.prelude[1])
                     mode.trigger_events(mode_id,left.p.prelude[left.p.prelude_index])
                 end
                 play_events()
@@ -3296,7 +3281,6 @@ function upd()
                         mode.trigger_events(mode_id,ev)
                     end
                 else
-                    -- mode.trigger_events(mode_id,right.p.event[1])
                     mode.trigger_events(mode_id,right.p.event[right.p.event_index])
                 end
                 play_events()
@@ -3308,7 +3292,6 @@ function upd()
                         mode.trigger_events(mode_id,pre)
                     end
                 else
-                    -- mode.trigger_events(mode_id,right.p.prelude[1])
                     mode.trigger_events(mode_id,right.p.prelude[right.p.prelude_index])
                 end
                 play_events()
@@ -3329,18 +3312,18 @@ function upd()
     end
 
     if btnp("h") then
-        _log(test.openSesame(mode.history(), "mode.history"))
+        _log(test.openSesame(count_event, "mode.history"))
     local txt=""
     for k, v in pairs(bestTries) do
         txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
     end
         clipboard(txt)
     end
-    if playing and btnr("r") then
+    if playing and btnr("z") then
         local Return = function(base) 
             local buffer = 600
-            if hero and hero.sq and hero.sq.t >buffer  and not pressR then
-                pressR = true
+            if hero and hero.sq and hero.sq.t >buffer  and not pressZ then
+                pressZ = true
                 mode.trigger_events(mode_id, "move_"..base)
                 play_events()
             end
@@ -3378,11 +3361,68 @@ function upd()
         end
         
     end
-    if selected and not btn("k:lshift") and mcr then
+    if DEV and selected and not btn("k:lshift") and mcr then
         if edit_panel then
             hide_edit_panel()
         end
     end
+
+    if DEV and selected and btn("k:lctrl") and btnp("k:c") then
+        sfx("card_land")
+        copy_stat = {selected.type, hp = selected.hp, hp_max=selected.hp_max, cd=selected.cd, tempo=selected.tempo, iron=selected.iron, inert=selected.inert, flying=selected.flying, shield=selected.shield, protect=selected.protect, airy=selected.airy, pike= selected.pike, jail = selected.jail}
+    end
+
+    if DEV and selected and copy_stat and btn("k:lctrl") and btnp("k:v") then
+        local piece = selected
+        local stats = copy_stat
+        sfx("card_land")
+        piece.upd = function() 
+            piece.cd = stats.cd
+            piece.hp = stats.hp
+            piece.hp_max = stats.hp_max
+            piece.tempo = stats.tempo
+            piece.iron=stats.iron
+            piece.inert=stats.inert
+            piece.flying=stats.flying
+            piece.shield=stats.shield
+            piece.protect=stats.protect
+            piece.airy = stats.airy
+
+            piece.pike = stats.pike
+            if piece.pike and #piece.behavior == #(PIECES_TYPES[stats[1]].behavior) then
+                add(piece.behavior, { id="line",1,1,2,  atk=1, fatality="pike" })
+            elseif not piece.pike and #piece.behavior > #(PIECES_TYPES[stats[1]].behavior) then
+                deli(piece.behavior, #piece.behavior)
+            end
+
+            piece.jail = stats.jail
+            piece.prison_bar = stats.jail and 1 or nil
+        end
+    end
+
+    local dev_move_dirs = {
+        up    = 3,
+        down  = 1,
+        left  = 2,
+        right = 0
+    }
+
+    local function dev_move_selected(dir)
+        if DEV and selected and btnp("k:"..dir) then
+            local piece = selected
+            local d = dev_move_dirs[dir]
+            if dsq(piece.sq, d) and not dsq(piece.sq, d).p then
+                goto_sq(piece, dsq(piece.sq, d))
+                remove_buts()
+                play()
+            end
+        end
+    end
+
+    dev_move_selected("up")
+    dev_move_selected("down")
+    dev_move_selected("left")
+    dev_move_selected("right")
 end
 function set_updater()
 	local e = mke()
@@ -3510,6 +3550,7 @@ append("set_mode", function()
     function mode.get_start_sq(f)
         get_start_sq = f
     end
+  
     function mode.load_entities(entity)
         add(entities,entity)
     end
@@ -3656,12 +3697,11 @@ append("set_mode", function()
             SAVE[id]= {}
         end
     end
-    function mode.load_hero_stats()
+    function mode.load_hero_stats(hasWaitingRoom)
         local function func(name, new_stat)
             mode.base[name] = new_stat
         end
         if hero_status and #hero_status > 0 then
-            add(mode.destination, {0,0, hero_status[1], hero_status[2]})
             mode.no_shotgun = hero_status[4]
             ammo = hero_status[5]
             chamber = hero_status[6]
@@ -3677,7 +3717,11 @@ append("set_mode", function()
             func("grenade_dmg", hero_status[16])
             func("ammo_regen", hero_status[17])
             func("blood_bowl", hero_status[18])
-            return hero_status[3]
+            if not hasWaitingRoom then
+                add(mode.destination, {0,0, hero_status[1], hero_status[2]})
+                return hero_status[3]
+            end
+            return false
         end
     end
 

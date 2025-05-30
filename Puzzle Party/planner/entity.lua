@@ -238,11 +238,11 @@ entity = {
                         if square and square.p and square.p.event and not plant.inter then
                             if (square.p.repeatable == nil and is_subset({gsq(px,py).p.event[1]}, mode.history())) or
                                (square.p.repeatable ~=nil and is_subset(gsq(px,py).p.event, mode.history())) then
-                             plant.inter = true
-                             if hero then
-                                 remove_buts()
-                                 play()
-                             end
+                                plant.inter = true
+                                if hero then
+                                    remove_buts()
+                                    play()
+                                end
                             end           
                         end
                     end

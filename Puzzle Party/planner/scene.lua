@@ -1,20 +1,22 @@
 general_events = {
-    puzzle = {
+ puzzle = {
         dev={},
         [0]={   
             {ev=ev_create_edit_panel},
             {ev=ev_mk_play_button},
             {ev=ev_mk_card_set_button},
             {ev=ev_offset_soul_slot, params=400},
-
+        },
+        set_up={
+            {ev=create_panels}, 
+            {ev=ev_create_name_panel},
         },
         [1]={   
             {ev=ev_cond, params="not_dev"},
                 {ev=ev_reset_cards},
             {ev=ev_end},
             {ev=ev_remove_play_button},
-            {ev=create_panels}, 
-            {ev=ev_create_name_panel},
+     
             {ev=ev_hide_card},
             {ev=ev_set_tempo, params={"rook",0}},
             {ev=ev_set_tempo, params={"bishop",0}},
@@ -44,6 +46,7 @@ general_events = {
             {ev=mk_square_trigger, params={{event="move_7"},7,2}},
             {ev=mk_square_trigger, params={{event="move_0", trigger="dev"},3,4}}
         },
+
         [2]={
             {ev=ev_soul_slot, params={-1, true}},
             {ev=ev_base_promote, params={"pawn", true}},
