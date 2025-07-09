@@ -365,6 +365,7 @@ function ev_souls(typ, isUnlimited)
     event_nxt()
 end
 function ev_display_turn()
+    kl(display)
     display = mke()
 
     display.dr = function()
@@ -4725,6 +4726,7 @@ function dr_clockwork_range(p)
     local function get_clockwork_range(p)
         local danger = {}
         local movement ={}
+        if not p or not p.sq then return end
         local px = p.sq.px
         local py = p.sq.py 
         for index = 1, #p.behavior, 1 do
@@ -4754,7 +4756,9 @@ function dr_clockwork_range(p)
         return danger, movement
     end
     local dan, mov = get_clockwork_range(p)
-
+    if not dan or not mov then
+        return
+    end
     spritesheet("customtiles")
     for v in all(dan) do
         local sq= gsq(v[1], v[2])

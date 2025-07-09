@@ -24,8 +24,6 @@ function start()
 	mode.in_cine=true
 	mode.no_shotgun=true
 	mode.hide_cards=true
-	-- mode.lvl= START_LVL or 1
-	mode.lvl=mode.load_hero_stats() or (START_LVL or 1)
 	mode.lvl= START_LVL or 1
 	mode.get_start_sq(find_start_coords)
 	if tuto_intro and not DEV then
