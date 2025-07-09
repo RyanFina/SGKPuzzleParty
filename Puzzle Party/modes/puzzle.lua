@@ -54,8 +54,10 @@ function get_board_size()
 		end
 		
 		return 3,8
-	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 or mode.lvl ==0 then
+	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 then
 		return 10,10
+	elseif mode.lvl ==0 then
+		return 15,15
 	else
 		-- restore gain from small board
 		if #mode.tbase > 0 then
@@ -67,6 +69,7 @@ function get_board_size()
 	end
 
 end
+
 -- Helper function: returns px, py (does not modify state)
 function find_start_coords(lvl, history, destination, px, py)
 	if mode.lvl ==0 then

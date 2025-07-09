@@ -1,4 +1,4 @@
-english = { 
+english ={
     ["puzzle"]={
         [mod_index..". puzzle_desc"] = "Puzzle Party|Puzzle progression that left your mind gasping",
         quest = "Quest",

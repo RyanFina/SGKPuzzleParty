@@ -10,9 +10,11 @@ newsrf("cards.png", "samplemod_cards")
 newsrf("pieces.png", "samplemod_pieces")
 newsrf("dialogue.png", "dialogue")
 -- Puzzle music
-newmus("Background_Check.wav", "floor1")
-newmus("Needle_In_A_Haystack.wav", "floor2")
-newmus("Too Crazy.wav", "floor3")
+newmus("Background Check.mp3", "floor1")
+newmus("Needle_In_A_Haystack.mp3", "floor2")
+newmus("Too Crazy.mp3", "floor3")
+newmus("male-snore.mp3", "snore")
+newmus("dripping-water.mp3", "water")
 -- You may create a save bank for your mod with this function:
 -- newbnk(128, 64, 4)
 
@@ -23,7 +25,7 @@ local replaceable = gimme("replaceable")
 local forbidden = gimme("forbidden")
 local autocall = gimme("autocall")
 DEV = true
-
+VISION = 7
 test.openSesame(global, "Global")
 
 test.openSesame(forbidden, "Forbidden")
@@ -38,7 +40,9 @@ end end
 
 require("planner/medals.lua")
 bestTries = {}
-
+room_event_entity = {}
+room_prelude_entity = {}
+hero_status = {}
 require("planner/pieces.lua")
 local new_cards = require("planner/cards.lua")
 -- START_LVL=100
@@ -89,8 +93,14 @@ function better_sub(str, start, finish)
     end 
 end
 function add_content(tbl, new_content)
-	for _,v in ipairs(new_content) do
-		add(tbl, v)
+	for k,v in pairs(new_content) do
+        if type(k) =="number" then
+		    add(tbl, v)
+        elseif type(k)=="string" then
+            if tbl[k] and type(tbl[k])=="number" and type(v)=="number" then
+                tbl[k] = tbl[k] + v
+            end
+        end
 	end
 end
 
@@ -280,7 +290,7 @@ function mk_entity(mk_e, px,py,ev)
     local compare = {}
     if px == nil and py == nil then
         local locent = entity[mk_e]
-        local mk = locent.new_entity(px,py)
+        local mk = locent.new_entity()
         mk.dr = locent.dr
         mode.load_entities(mk)
     else    
@@ -310,7 +320,25 @@ function mk_entity(mk_e, px,py,ev)
 
     event_nxt()
 end
+function ev_sfx(id, channel, volume, pan, pitch)
+    sfx(id, channel, volume, pan, pitch)
+    event_nxt()
+end
 
+function ev_mus(id, channel, loop, fade_time, sync_with, advance)
+    music(id, channel, loop, fade_time, sync_with, advance)
+    event_nxt()
+end
+
+function ev_palette(tbl)
+    if type(tbl) == "string" then
+        if tbl=="gothic_bit" then
+            tbl ={0x0e0e12 ,0x1a1a24, 0x333346,0x535373,0x8080a4,0xa6a6bf,0xc1c1d2,0xe6e6ec}
+        end
+    end
+    palette(tbl)
+    event_nxt()
+end
 piece_souls = {}
 function ev_souls(typ, isUnlimited)
     if type(isUnlimited) == "number" then
@@ -336,23 +364,12 @@ function ev_souls(typ, isUnlimited)
     end
     event_nxt()
 end
-function ev_offset_soul_slot(value)
-    offSoul = mke()
-    local i = 0
-    offSoul.upd = function()
-        for v in all(ents) do
-            if v.x == 135+board_x or v.x == 135+ 16 +board_x then
-                v.x = 270
-                if value then
-                    v.x = value
-                end
-            end
-        end  
-    end
+function ev_display_turn()
+    display = mke()
 
-    offSoul.dr = function()
+    display.dr = function()
         if 20 - board_x/8 >=10  and mode.turns then
-            lprint("Turns: "..mode.turns, 5, 175,2) 
+            lprint("Turns: "..mode.turns, 10+ (camera_x or 0) +(show_player_status and -800 or 0), 175 + (camera_y or 0),2) 
         end
     end
     event_nxt()
@@ -487,8 +504,19 @@ function ev_mk_play_button()
                             deli(p.behavior, #p.behavior)
                         end
 
-                        sq.p.jail = true
-                        sq.p.prison_bar = 1
+                        p.jail = true
+                        p.prison_bar = 1
+
+                        if p.bad then
+                            local radius = get_zone(p.sq, VISION)
+                            for sq in all(radius) do
+                                if sq.p and (sq.p.bad == false or sq.p == hero) then
+                                    p.status = true
+                                    return
+                                end
+                            end
+                            p.status = false
+                        end
                     end
                 end
                 wait(TEMPO*2, play)
@@ -499,9 +527,27 @@ function ev_mk_play_button()
                             p.upd= function()
                                 p.old_upd()
                                 p.airy = true
+                                local radius = get_zone(p.sq, VISION)
+                                for sq in all(radius) do
+                                    if sq.p and (sq.p.bad == false or sq.p == hero) then
+                                        p.status = true
+                                        return
+                                    end
+                                end
+                                p.status = false
                             end
                         else
-                            p.upd = p.old_upd
+                            p.upd = function()
+                                p.old_upd()
+                                local radius = get_zone(p.sq, VISION)
+                                for sq in all(radius) do
+                                    if sq.p and (sq.p.bad == false or sq.p == hero) then
+                                        p.status = true
+                                        return
+                                    end
+                                end
+                                p.status = false
+                            end
                         end
                     end
                 end
@@ -512,14 +558,16 @@ function ev_mk_play_button()
                     if sq.tile_special then
                         sq.upd = nil
                         sq.tile_special = nil
-                        sq.dr = sq.old_dr
+                        if sq.old_dr then
+                            sq.dr = sq.old_dr
+                        end
                     end
                 end
 
                 for i = 1, #dev_save_tile, 1 do
                     local sq = gsq(dev_save_tile[i][1],dev_save_tile[i][2])
                     sq.tile_special = dev_save_tile[i][3]
-                    sq.old_dr = sq.dr
+                    sq.old_dr = sq.old_dr and sq.old_dr or sq.dr
                     sq.dr = function(sq,x,y)
                         sq.old_dr(sq,x,y)
                         if tileType[sq.tile_special] then
@@ -544,6 +592,12 @@ function ev_mk_play_button()
             mode.turns =1
         end)
         play_button.ents[1].button = false
+        play_button.upd = function()
+            play_button.x = 245 + (camera_x or 0) + (show_player_status and 0 or -1000)
+            play_button.y = 160 + (camera_y or 0)
+            play_button.ents[1].x = play_button.x
+            play_button.ents[1].y = play_button.y
+        end
     end
     if not export_button then
         export_button= mk_text_but(280,160,32,"EXPORT",function ()
@@ -563,20 +617,20 @@ function ev_mk_play_button()
                 if sq.tile_special and sq.tile_special~="normalize" then
                     add(dev_save_tile, {sq.px, sq.py, sq.tile_special})
                 end
-                if sq.p and sq.p.type ==-1 and sq.p.x==-1309 and sq.p.y==-1309 then
+                if sq.p and sq.p.type ==-1 then
                     add(dev_save_entity, {sq.p.name, sq.px, sq.py})
                 end
             end
 
             -- save dev_save piece, tile and entity
-            if not SAVE[mode_id].dev_save_piece then
+            if not SAVE[mode_id].dev_save_piece or #dev_save_piece ==1 then
                 SAVE[mode_id].dev_save_piece = {}
             end
             for i = 1, #dev_save_piece, 1 do
                 SAVE[mode_id].dev_save_piece[i]= dev_save_piece[i]
             end
 
-            if not SAVE[mode_id].dev_save_tile then
+            if not SAVE[mode_id].dev_save_tile and #dev_save_tile ==0 then
                 SAVE[mode_id].dev_save_tile = {}
             end
             for i = 1, #dev_save_tile, 1 do
@@ -597,7 +651,7 @@ function ev_mk_play_button()
                     if p.type == patrol_typ and p.inert then
                     else
                         spawn_info = spawn_info .. 
-                        "\t\t\t\t{ev=ev_spawn, params={" .. 
+                        "\t\t\t\t--{ev=ev_spawn, params={" .. 
                         p.type .. "," ..tostr( p.bad ).. "," .. p.sq.px .. "," .. p.sq.py .. ", nil" ..
                         ", {" ..
                         (p.hp<p.hp_max and "hp=" .. p.hp .. ", " or "") ..
@@ -610,6 +664,7 @@ function ev_mk_play_button()
                         (p.shield and "shield=" .. tostr(p.shield) .. ", " or "") ..
                         (p.protect and "protect=" .. tostr(p.protect) .. ", " or "") ..
                         (p.airy and "airy=" .. tostr(p.airy) .. ", " or "") ..
+                        (p.pike and "pike=" .. tostr(p.pike) .. ", " or "") ..
                         (is_instant and "instant=" .. 1 .. ", " or "") ..
                         "}" ..
                         "}}," .. "\n"
@@ -621,9 +676,9 @@ function ev_mk_play_button()
             local function tile_code()
                 local tile_info =""
                 for sq in all(squares) do
-                    if sq.tile_special then
+                    if sq.tile_special and sq.tile_special~="normalize" then
                         tile_info= tile_info..
-                        "\t\t\t{'" ..
+                        "\t\t\t--{'" ..
                         sq.tile_special .. "'," ..
                         sq.px .. "," ..
                         sq.py .. "," ..
@@ -638,18 +693,18 @@ function ev_mk_play_button()
                 for sq in all(squares) do
                     if sq.p and sq.p.type ==-1 and sq.p.x==-1309 and sq.p.y==-1309 then 
                         entity_info= entity_info..
-                        '\t\t\t{ev=mk_entity, params={"' ..
+                        '\t\t\t--{ev=mk_entity, params={"' ..
                         sq.p.name .. '", ' .. sq.px .. ',' .. sq.py ..
                         '}},\n'
                     end
                 end
                 return entity_info
             end
-            local content = '\t\t\t{ev_cond, params={"(1)SWAP_HERE"}},\n' ..
+            local content = '\t\t\t--{ev=ev_cond, params="(1)SWAP_HERE"},\n' ..
             spawn_ev_code()..
-            "\t\t\t{ev_else}," .. "\n" ..
+            "\t\t\t--{ev=ev_else}," .. "\n" ..
             spawn_ev_code(true)..
-            "\t\t\t{ev_end},\n\n"..
+            "\t\t\t--{ev=ev_end},\n\n"..
             entity_code()
 
             
@@ -663,11 +718,11 @@ function ev_mk_play_button()
             local file_content = file(filepath)
 
             -- Define the new content
-            local new_content = "dev={\n" .. content .. "\n\t\t}"
+            local new_content = "--dev={\n" .. content .. "\n\t\t--}"
 
             -- Replace the entire `dev={...}` block with the new content
             if file_content then
-                file_content = sbs(file_content, "dev=%b{}", new_content)
+                file_content = sbs(file_content, "--dev=%b{}", new_content)
             else
                 file_content = new_content
             end
@@ -680,9 +735,9 @@ function ev_mk_play_button()
             filename = "tiles.lua"
             filepath = "/planner/"..filename
             file_content = file(filepath)
-            new_content = "dev={\n" .. content .. "\t\t}"
+            new_content = "--dev={\n" .. content .. "\t\t--}"
             if file_content then
-                file_content = sbs(file_content, "dev=%b{}", new_content)
+                file_content = sbs(file_content, "--dev=%b{}", new_content)
             else
                 file_content = new_content
             end
@@ -691,6 +746,12 @@ function ev_mk_play_button()
             
         end)
         export_button.ents[1].button = false
+        export_button.upd = function()
+            export_button.x = 280 + (camera_x or 0)  + (show_player_status and 0 or -1000)
+            export_button.y = 160 + (camera_y or 0)
+            export_button.ents[1].x = export_button.x
+            export_button.ents[1].y = export_button.y
+        end
     end
     event_nxt()
 end
@@ -698,7 +759,13 @@ card_sets =
     {
         {"Patrol", "Pawn", "Knight", "Rook", "Bishop", "Queen", "King", "Gryphon", "Cannonball", "Nightrider", "Mini Knight"},
         {"Normal","Up", "Down", "Left", "Right", "Push Up", "Push Down", "Push Left", "Push Right", "Moat","Number 1", "Number 2", "Number 3", "Number 4", "Number 5", "Number 6", "Number 7", "Number 8", "Number 9", "Medal", "Vent", "Stair"},
-        {"Wall", "Barrel", "Plant", "Door","Passcode", "Cursed Wall","Cracked Wall","Chest","Key Door", "Key Door 2",}
+        {"Top Right Large Wall","Left Horizontal Wall","Middle Horizontal Wall","Right Horizontal Wall",
+        "Up Vertical Wall","Middle Vertical Wall","Down Vertical Wall", 
+        "Top Left Large Wall","Top Middle Large Wall",
+        "Left Middle Large Wall","Mid Middle Large Wall",
+        "Right Middle Large Wall","Bottom Left Large Wall","Bottom Middle Large Wall",
+        "Bottom Right Large Wall","Singular Wall",
+        "Wall", "Barrel", "Plant", "Door","Passcode", "Cursed Wall","Cracked Wall","Chest","Key Door", "Key Door 2",},
     }
 function ev_mk_card_set_button()
     local function identify_card_set(cards)
@@ -721,7 +788,9 @@ function ev_mk_card_set_button()
     local function save_set(set_order)
         local display_cards ={}
         for v in all(get_slot_cards()) do
-            add(display_cards, v.id)
+            if tbl_has(card_sets[set_order], v.id) then
+                add(display_cards, v.id)
+            end
         end
 
         for v in all(display_cards) do
@@ -753,17 +822,28 @@ function ev_mk_card_set_button()
             wait(TEMPO*2, play)
         end)
         card_set_button.ents[1].button = false
+        card_set_button.upd = function(self)
+            self.x = 8 + (camera_x or 0) + (show_player_status and 0 or -1000)
+            self.y = 3 + (camera_y or 0)
+            self.ents[1].x = self.x
+            self.ents[1].y = self.y
+        end
         event_nxt()
     end
 end
-function ev_remove_play_button()
+function ev_remove_dev_button()
     kl(play_button)
     play_button = nil
 
     kl(export_button)
     export_button = nil
+
+    kl(card_set_button)
+    card_set_button = nil
+
     event_nxt()
 end
+
 function mk_square_trigger(ev, ...)
     local condition
     local trig = {}
@@ -1055,6 +1135,19 @@ function ev_spawn(type,isBad, x,y,tbl, info)
         piece_transition(p,TEMPO)
         p.turn = p.turn or 1
         p.buffer = p.buffer or 0
+        p.upd = function()
+            p.airy = info.airy
+            if p.bad then
+                local radius = get_zone(p.sq, VISION)
+                for sq in all(radius) do
+                    if sq.p and (sq.p.bad == false or sq.p == hero) then
+                        p.status = true
+                        return
+                    end
+                end
+                p.status = false
+            end
+        end
         if p and p.behavior and #p.behavior>0 and p.behavior[1].id=="clockwork" then
             p.upd= function()
                 local px = p.sq.px
@@ -1140,6 +1233,11 @@ function ev_create_edit_panel()
     edit_panel.dr = dr_edit_panel
     edit_panel.state = false
     edit_panel.upd = function() 
+        if not edit_panel.state then
+            edit_panel.x, edit_panel.y = 245+80 + (camera_x or 0), 5 +(camera_y or 0)
+        else
+            edit_panel.x, edit_panel.y = 245 + (camera_x or 0), 5 +(camera_y or 0)
+        end
         if not mcl then return end
         if not selected then return end
         local function adjust_cd()
@@ -1292,7 +1390,7 @@ function ev_create_edit_panel()
         adjust_hp_max()
     end
     local function create_switch(x, y, label, toggle_property, on_click)
-        local switch = mk_text_but(x, y, 32, label, function()
+        local switch = mk_text_but(edit_panel.x + x, edit_panel.y +y, 32, label, function()
             sfx("card_land")
             local piece = selected
             local old_upd = piece.upd
@@ -1320,6 +1418,11 @@ function ev_create_edit_panel()
         switch.ents[1].out = nil
 
         switch.upd = function()
+            switch.x = edit_panel.x +x 
+            switch.y = edit_panel.y +y 
+            switch.ents[1].x = switch.x
+            switch.ents[1].y = switch.y
+            
             if not switch.out_original or not switch.over_original then return end
             if selected then   
                 if selected[toggle_property] and not switch.active then
@@ -1338,7 +1441,7 @@ function ev_create_edit_panel()
     end
 
     -- Create buttons using the factory
-    edit_panel.iron_but = create_switch(edit_panel.x + 3, edit_panel.y + 40, "IRON", "iron", function() 
+    edit_panel.iron_but = create_switch(3, 40, "IRON", "iron", function() 
         if selected.type ==5 then 
             local piece = selected
             local old_upd = piece.upd
@@ -1349,10 +1452,10 @@ function ev_create_edit_panel()
             end
          end 
     end)
-    edit_panel.inert_but = create_switch(edit_panel.x + 36, edit_panel.y + 40, "INERT", "inert")
-    edit_panel.flying_but = create_switch(edit_panel.x + 3, edit_panel.y + 55, "FLYING", "flying")
-    edit_panel.shield_but = create_switch(edit_panel.x + 36, edit_panel.y + 55, "SHIELD", "shield")
-    edit_panel.pike_but = create_switch(edit_panel.x + 3, edit_panel.y + 70, "PIKE", "pike", function()
+    edit_panel.inert_but = create_switch(36, 40, "INERT", "inert")
+    edit_panel.flying_but = create_switch(3, 55, "FLYING", "flying")
+    edit_panel.shield_but = create_switch(36, 55, "SHIELD", "shield")
+    edit_panel.pike_but = create_switch(3, 70, "PIKE", "pike", function()
         local piece = selected
         local old_upd = piece.upd
         local beh= piece.behavior
@@ -1366,8 +1469,8 @@ function ev_create_edit_panel()
         end
         
     end)
-    edit_panel.protect_but = create_switch(edit_panel.x + 36, edit_panel.y + 70, "PROTECT", "protect")
-    edit_panel.airy_but = create_switch(edit_panel.x + 3, edit_panel.y + 85, "AIRY", "airy")
+    edit_panel.protect_but = create_switch(36, 70, "PROTECT", "protect")
+    edit_panel.airy_but = create_switch(3, 85, "AIRY", "airy")
     event_nxt()
 end
 
@@ -1388,7 +1491,7 @@ end
 
 function show_edit_panel()
     if not edit_panel then return end
-    if edit_panel.x ==245+80 then
+    if edit_panel.state== false then
         mv(edit_panel,-80,0,25)
         mv(edit_panel.iron_but,-80,0,25)
         mv(edit_panel.inert_but,-80,0,25)
@@ -1403,7 +1506,7 @@ end
 
 function hide_edit_panel()
 	if not edit_panel then return end
-    if edit_panel.x ==245 then
+    if edit_panel.state == true then
         mv(edit_panel,80,0,25)
         mv(edit_panel.iron_but,80,0,25)
         mv(edit_panel.inert_but,80,0,25)
@@ -1421,7 +1524,7 @@ function ev_create_name_panel()
     if not panel then
         panel = mke()
         panel.dp = DP_TOP
-        panel.x, panel.y = MCW/2-SQ, MCH+50
+        panel.x, panel.y = -9999,99999
         panel.dr = dr_name_panel
     end
     
@@ -1434,11 +1537,13 @@ function dr_name_panel(e,x,y)
 end
 function ev_show_name_panel(name)
     intro_panel = name
+    panel.x, panel.y = MCW/2-SQ + (camera_x or 0), MCH+50 + (camera_y or 0)
     panel.twcv= ease_bounce_out
-    mvt(panel,MCW/2-SQ,MCH-5,50,bind(wait,60,function()
+    mvt(panel,MCW/2-SQ +(camera_x or 0),MCH-5 +(camera_y or 0),50,bind(wait,60,function()
         panel.twcv = ease_out
-        mvt(panel,MCW/2-SQ,MCH+50,50)
+        mvt(panel,MCW/2-SQ+(camera_x or 0),MCH+50+(camera_y or 0),50)
     end))
+    panel.x, panel.y = -9999,99999
     event_nxt()
 end
 -- OBJECTIVES PANEL
@@ -1450,13 +1555,20 @@ function create_objectives()
 	objectives=mke()
 	objectives.dp=DP_TOP+1
 	objectives.dr=dr_objectives
-	objectives.x,objectives.y=32,18-500
-
+    objectives.status = false
+    objectives.upd = function() 
+        if not objectives.status then
+	        objectives.x,objectives.y=32 +(camera_x or 0), 18-500 + (camera_y or 0)
+        else
+            objectives.x,objectives.y=32 +(camera_x or 0), 18 + (camera_y or 0)
+        end
+    end
     goal = mke()
     goal.dp=DP_TOP
     goal.dr=dr_goal
-    goal.dr = dr_goal
-    goal.x,goal.y=5,5
+    goal.upd = function()
+        goal.x, goal.y = 5+(camera_x or 0), 5+(camera_y or 0)
+    end
     goal.index = 1
 
     for k, v in ipairs(obj_tabs) do
@@ -1591,14 +1703,16 @@ function ev_quest(obj)
 end
 function hide_objectives()
 	if not objectives then return end
-    if objectives.y ==18 then
-        mv(objectives,0,-500,50)
+    if objectives.status then
+        mv(objectives, 0, -500, 60)
+        objectives.status = false
     end
 end
 function ev_hide_objectives()
 	if not objectives then return end
-    if objectives.y ==18 then
-        mv(objectives,0,-500,50)
+    if objectives.status then
+        mv(objectives, 0, -500, 60)
+        objectives.status = false
     end
 	
     event_nxt()
@@ -1606,14 +1720,16 @@ end
 
 function show_objectives()
     goal.index = goal.index== #quest.current and 1 or goal.index+1  
-    if objectives.y ==18-500 then
-        mv(objectives,0,500,50)
+    if not objectives.status then
+        mv(objectives, 0, 500, 60)
+        objectives.status = true
     end
 end
 
 function ev_show_objectives()
-    if objectives.y ==18-500 then
-        mv(objectives,0,500,50)
+    if not objectives.status then
+        mv(objectives, 0, 500, 60)
+        objectives.status = true
     end
 	
     event_nxt()
@@ -1748,7 +1864,7 @@ ANIMATIONS = {
             dia.frames=frames
             dia.width, dia.height = 192, 47
             
-            if is_down then dia.x,dia.y=64,124 else dia.x,dia.y=64,0 end
+            if is_down then dia.x,dia.y= 64+(camera_x or 0), 124 +(camera_y or 0) else dia.x,dia.y=64+(camera_x or 0), 0+(camera_y or 0) end
         
             dia.ttypewriter=0
             dia.typing=true
@@ -1798,7 +1914,7 @@ ANIMATIONS = {
                     choice.h= ceil(strwidth(v)/max_w_option)
                     choice.is_down = not is_down
                     choice.x= dia.x+dia.width-choice.w
-                    choice.y= not is_down and dia.y+dia.height+8*height or dia.y-8*height 
+                    choice.y= not is_down and dia.y+dia.height+8*height or dia.y-8*height
                     height = height + choice.h
 
                     choice.upd= function()
@@ -1895,11 +2011,193 @@ function ev_goto_sq(is_bad, index, px, py, tempo, f)
     event_nxt()
 end
 
+function ev_move_camera(dx, dy, duration)
+    duration = duration /60 or 0
+    local start_x = camera_x or 0
+    local start_y = camera_y or 0
+    local target_x = start_x + dx
+    local target_y = start_y + dy
+    local elapsed = 0
+
+    if duration <= 0 then
+        camera_x = target_x
+        camera_y = target_y
+        event_nxt()
+        return
+    end
+
+    local cam_anim = mke()
+    cam_anim.upd = function(self)
+        elapsed = elapsed + dt()
+        local t = min(elapsed / duration, 1)
+        camera_x = lerp(start_x, target_x, t)
+        camera_y = lerp(start_y, target_y, t)
+        if t >= 1 then
+            camera_x = target_x
+            camera_y = target_y
+            kl(self) -- kill this entity
+            event_nxt()
+        end
+    end
+end
+
+encounter_table  = {}
+function ev_set_encounter(tbl)
+    encounter_table  = tbl
+    event_nxt()
+end
+
+zone_table = {}
+function ev_zone(x,y , w, h, num)
+    add(zone_table, {x=x, y=y, w=w, h=h, num=num})
+
+    event_nxt()
+end
+
+function ev_zone_spawn(zone_index, space, pieces)
+    if type(pieces) =="number" then
+        pieces = {pieces}
+    end
+    for k, v in pairs(pieces) do
+        if #space == 0 then
+            -- No more free space, skip spawning
+            break
+        end
+        local index = irnd(#space)+1
+        local p = new_piece(v,true, space[index])
+        p.upd = function()
+            if p.bad then
+                local radius = get_zone(p.sq, VISION)
+                for sq in all(radius) do
+                    if sq.p and (sq.p.bad == false or sq.p == hero) then
+                        p.status = true
+                        return
+                    end
+                end
+                p.status = false
+            end
+        end
+        zone_table[zone_index].amount = zone_table[zone_index].amount and zone_table[zone_index].amount + 1 or 1
+        p.room = zone_index
+        deli(space, index)
+    end
+    event_nxt()
+end
+function ev_change_screen_size(x,y)
+   winspec("screen", x,y)
+   event_nxt()
+end
+
+function ev_clip_screen(dp, x,y,w,h, use_cam)
+    if dp ==0 then
+        clip_screen_0 = {x,y, w,h, use_cam}
+    elseif dp ==1 then
+        clip_screen_1 = {x,y, w,h, use_cam}
+    elseif dp ==2 then
+        clip_screen_2 = {x,y, w,h, use_cam}
+    elseif dp ==3 then
+        clip_screen_3 = {x,y, w,h, use_cam}
+    elseif dp ==4 then
+        clip_screen_4 = {x,y, w,h, use_cam}
+    elseif dp ==5 then
+        clip_screen_5 = {x,y, w,h, use_cam}
+    elseif dp ==6 then
+        clip_screen_6 = {x,y, w,h, use_cam}
+    end
+    event_nxt()
+end
 function ev_repeat_after_me(str)
     log(str)
     event_nxt()
 end
 pressZ = false
+function ev_focus_hero()
+    start_camera_follow()
+    event_nxt()
+end
+function ev_fade_to(num, duration)
+    fade_to(num, duration)
+    event_nxt()
+end
+function save_game(is_transport)
+    room_event_entity[mode.lvl] = {}
+    room_prelude_entity[mode.lvl] = {}
+    if not is_transport then
+        local px, py = hero.sq.px, hero.sq.py
+        hero_status= {
+            px, py, mode.lvl, mode.no_shotgun, ammo, chamber, stack.ammo_max, 
+            stack.chamber_max, stack.firepower, stack.firerange, stack.spread,
+            stack.special, stack.knockback, stack.pierce, stack.grenades_max, 
+            stack.grenade_dmg, stack.ammo_regen, stack.blood_bowl
+        }
+    end
+
+    local global_history={}
+    local room_history= {}
+    for k, v in pairs(history) do
+        if k ~= "room" and v ~= "dev" then
+            add(global_history, v)
+        elseif k == "room" then
+            tbl_import(room_history, v)
+            del(room_history, "dev")
+        end
+    end
+    local global_count_ev = {}
+    local room_count_ev = {}
+    for k, v in pairs(count_event) do
+        if k ~= "room" then
+            global_count_ev[k] = v
+        else
+            tbl_import(room_count_ev, v)
+        end
+    end
+
+    local current_quest = {}
+    local completed_quest = {}
+    for k, v in pairs(quest) do
+        if k =="current" then
+            tbl_import(current_quest, v)
+        elseif k == "completed" then
+            tbl_import(completed_quest, v)
+        end
+    end
+
+    for sq in all(squares) do
+        if sq.p and sq.p.event then
+            add(room_event_entity[mode.lvl], {sq.px, sq.py, sq.p.event_index}) 
+        end
+        if sq.p and sq.p.prelude then
+            add(room_prelude_entity[mode.lvl], {sq.px, sq.py, sq.p.prelude_index})
+        end
+    end
+    if SAVE[mode_id] then
+        SAVE[mode_id].hero_status = hero_status
+        SAVE[mode_id].bestTries = bestTries
+        SAVE[mode_id].global_history = global_history
+        SAVE[mode_id].room_history = room_history
+        SAVE[mode_id].global_count_ev = global_count_ev
+        SAVE[mode_id].room_count_ev = room_count_ev
+        SAVE[mode_id].current_quest = current_quest
+        SAVE[mode_id].completed_quest = completed_quest
+        if not SAVE[mode_id].room_event_entity then
+            SAVE[mode_id].room_event_entity = {}
+        end
+        if not SAVE[mode_id].room_prelude_entity then
+            SAVE[mode_id].room_prelude_entity = {}
+        end
+
+        for i = 1, #room_event_entity, 1 do
+            SAVE[mode_id].room_event_entity[i] = room_event_entity[i]
+        end
+        for i = 1, #room_prelude_entity, 1 do
+            SAVE[mode_id].room_prelude_entity[i] = room_prelude_entity[i]
+        end
+    end
+end
+function ev_save_game()
+    save_game()
+    event_nxt()
+end
 
 function ev_transport(id, f)
     remove_buts()
@@ -1933,14 +2231,11 @@ function ev_transport(id, f)
     for sq in all(squares) do
         sq.upd= function()
         end
-
-        if sq.p then
-            if sq.p.event then
-                add(room_event_entity[mode.lvl], {sq.px, sq.py, sq.p.event_index})
-            end
-            if sq.p.prelude then
-                add(room_prelude_entity[mode.lvl], {sq.px, sq.py, sq.p.prelude_index})
-            end
+        if sq.p and sq.p.event then
+            add(room_event_entity[mode.lvl], {sq.px, sq.py, sq.p.event_index}) 
+        end
+        if sq.p and sq.p.prelude then
+            add(room_prelude_entity[mode.lvl], {sq.px, sq.py, sq.p.prelude_index})
         end
     end
     entities={}
@@ -1957,8 +2252,8 @@ function ev_transport(id, f)
     mode.px= hero.sq.px
     mode.py= hero.sq.py
 
-    
     mode.lvl= id or mode.lvl+1
+
     local px, py = mode.px, mode.py
     if get_start_sq then
         px, py = get_start_sq(mode.lvl, history, mode.destination, mode.px, mode.py)
@@ -1969,7 +2264,9 @@ function ev_transport(id, f)
         stack.special, stack.knockback, stack.pierce, stack.grenades_max, 
         stack.grenade_dmg, stack.ammo_regen, stack.blood_bowl
     }
-    SAVE[mode_id].hero_status = hero_status
+    if mode_id =="puzzle" then
+        save_game(true)
+    end
 
     wait(90,fade_to,-4,20)
     local function next_room()
@@ -1982,56 +2279,7 @@ function ev_transport(id, f)
             mode.trigger_events(mode_id,mode.lvl)
         end
     end
-    local global_history={}
-    local room_history= {}
-    for k, v in pairs(history) do
-        if k ~= "room" and v ~= "dev" then
-            add(global_history, v)
-        elseif k == "room" then
-            tbl_import(room_history, v)
-            del(room_history, "dev")
-        end
-    end
-    local global_count_ev = {}
-    local room_count_ev = {}
-    for k, v in pairs(count_event) do
-        if k ~= "room" then
-            global_count_ev[k] = v
-        else
-            tbl_import(room_count_ev, v)
-        end
-    end
 
-    local current_quest = {}
-    local completed_quest = {}
-    for k, v in pairs(quest) do
-        if k =="current" then
-            tbl_import(current_quest, v)
-        elseif k == "completed" then
-            tbl_import(completed_quest, v)
-        end
-    end
-    if SAVE[mode_id] then
-        SAVE[mode_id].bestTries = bestTries
-        SAVE[mode_id].global_history = global_history
-        SAVE[mode_id].room_history = room_history
-        SAVE[mode_id].global_count_ev = global_count_ev
-        SAVE[mode_id].room_count_ev = room_count_ev
-        SAVE[mode_id].current_quest = current_quest
-        SAVE[mode_id].completed_quest = completed_quest
-        if not SAVE[mode_id].room_event_entity then
-            SAVE[mode_id].room_event_entity = {}
-        end
-        if not SAVE[mode_id].room_prelude_entity then
-            SAVE[mode_id].room_prelude_entity = {}
-        end
-        for i = 1, #room_event_entity, 1 do
-            SAVE[mode_id].room_event_entity[i] = room_event_entity[i]
-        end
-        for i = 1, #room_prelude_entity, 1 do
-             SAVE[mode_id].room_prelude_entity[i] = room_prelude_entity[i]
-        end
-    end
     end_level(f or next_room)
     if allies then 
         for ally in all(allies) do
@@ -2040,14 +2288,19 @@ function ev_transport(id, f)
     end
     mode.clear_allies()
     pressZ = false
-    kl(offSoul)
+    kl(display)
 
     for k, v in pairs(PIECES_TYPES) do
         append("activate_soul", function (e)
             
         end, "souls"..k)
     end
-
+    camera_x = 0
+    camera_y =0
+    room_x = nil
+    room_y = nil 
+    room_w = nil
+    room_h = nil
 
     event_nxt()
 end
@@ -2312,10 +2565,8 @@ function ev_grab(is_stack_only)
     stack.grab =1
     event_nxt()
 end
-function ev_cards(cards)
-    for card in all(cards) do
-        add_card(card)
-    end
+function ev_card(card)
+    add_card(card)
     event_nxt()
 end
 function ev_reset_cards()
@@ -2428,9 +2679,7 @@ if not DEV then
 else
     history = {room={"dev"}, "dev"}
 end
-room_event_entity = {}
-room_prelude_entity = {}
-hero_status = {}
+
 -- TILES
 require("planner/tiles.lua")
 require("planner/tileType.lua")
@@ -2703,7 +2952,7 @@ append("new_level", function()
                 local old_upd = sq.upd
         
                 sq.dr = function(sq,x,y)
-                    if sub(sq.tile_special,1,4) ~= "void" then
+                    if better_sub(sq.tile_special,1,4) ~= "void" then
                         old_dr(sq,x,y)
                     end
                     if sq.c_deep then --account for board spawn/despawn anim
@@ -2782,6 +3031,190 @@ append("goto_sq", function (e, sq) --when a piece lands on a square
 	end 
 end, "tiletool_move_enter")
 
+local satchel = get_card("Satchel")
+
+append("add_card", function (ca)
+    local id = type(ca)=="table" and ca.id or ca
+    local LIMIT = 3
+    map_tbl(CARDS)
+
+    if has_card("Satchel") then
+        if id ~= "Satchel" and CARDS[id].team == 0 and #CARDS[id].tags>0 and satchel.amount <LIMIT then
+            satchel.amount = satchel.amount + 1
+            for k, v in pairs(CARDS[id]) do
+                if not is_subset({k}, {"id", "ext", "need_card", "need_tag","need", "n", "index","gid","team","exclude","exclude_tag","pwe", "spsheet", "ignored", "played", "piece", "entity", "tile", "type_piece", "type_tile","type_entity"})  then
+                    if satchel[k] and type(satchel[k]) == "number" and type(v) == "number"  then
+                        satchel[k] = satchel[k] + v
+                    elseif satchel[k] and type(satchel[k]) == "table" and type(v) == "table" and #v >0 then
+                        add_content(satchel[k],v)
+                    elseif k~="sac" and k~="tags" and k~="gain" then
+                        satchel[k] = v
+                    end
+                end
+            end
+            for k, sl in pairs(card_slots) do
+                if sl.ca and sl.ca.id == "Satchel" then
+                    tbl_import(sl.ca, satchel)
+                elseif sl.ca and sl.ca.id == id then
+                    tear_apart(sl.ca)
+                end
+            end
+            if hero then remove_buts() play() end
+           
+        end
+    -- elseif #stack.tags >1 then
+    --     local tbl = {}
+    --     for k, sl in pairs(card_slots) do
+    --         if sl.ca and #sl.ca.tags>0 then
+    --             add(tbl, sl.ca)
+
+    --             satchel.amount = satchel.amount + 1
+    --             for k, v in pairs(CARDS[sl.ca.id]) do
+    --                 if not is_subset({k}, {"id", "ext", "need_card", "need_tag","need", "n", "index","gid","team","exclude","exclude_tag","pwe", "spsheet", "ignored", "played", "piece", "entity", "tile", "type_piece", "type_tile","type_entity"})  then
+    --                     if satchel[k] and type(satchel[k]) == "number" and type(v) == "number"  then
+    --                         satchel[k] = satchel[k] + v
+    --                     elseif satchel[k] and type(satchel[k]) == "table" and type(v) == "table" and #v >0 then
+    --                         add_content(satchel[k],v)
+    --                     elseif k~="sac" and k~="tags" and k~="gain" then
+    --                         satchel[k] = v
+    --                     end
+    --                 end
+    --             end
+    --         end
+    --     end
+    --     for k, v in pairs(tbl) do
+    --         tear_apart(v)
+    --     end
+    --     wait(TEMPO, add_card, "Satchel")
+    --     if hero then remove_buts() play() end
+        
+    end
+end, "satchel")
+
+function clamp_camera(x, y)
+    local bx= room_x or board_x
+    local by= room_y or board_y
+    local xm = room_w or xmax
+    local ym = room_h or ymax
+    x = max(xmax < 13 and 0 or bx -SQ/2, min(x, xm*SQ - MCW - abs(bx)+SQ/2))
+    y = max(ymax < 13 and 0 or by -SQ/2, min(y, ym*SQ - MCH - abs(by)+SQ/2))
+    -- x = max(bx >=0 and 2*bx - (MCW- xm*SQ) or bx -SQ/2, min(x, xm*SQ - MCW - abs(bx)+SQ/2))
+    -- y = max(by >=0 and 2*by - (MCH- ym*SQ+ SQ/2) or by -SQ/2, min(y, ym*SQ - MCH - abs(by)+SQ/2))
+    return x, y
+end
+function get_camera_target()
+    -- Center camera on hero, adjust as needed for your board/room size
+    local target_x = hero.sq.x - flr(MCW / 2)
+    local target_y = hero.sq.y - flr(MCH / 2)
+      -- Clamp to board bounds
+    return clamp_camera(target_x, target_y)
+end
+
+function start_camera_follow()
+    local start_x = camera_x or 0
+    local start_y = camera_y or 0
+    local target_x, target_y= get_camera_target()
+
+    local duration = 1/3 -- seconds (adjust for speed)
+    local elapsed = 0
+
+    local cam_anim = mke()
+    cam_anim.upd = function(self)
+        elapsed = elapsed + delta()
+        local t = min(elapsed / duration, 1)
+        -- Use an ease-out for a snappy finish
+        t = 1 - (1 - t) * (1 - t)
+        camera_x = lerp(start_x, target_x, t)
+        camera_y = lerp(start_y, target_y, t)
+        if t >= 1 then
+            camera_x = target_x
+            camera_y = target_y
+            kl(self)
+        end
+    end
+end
+
+append("goto_sq", function (e, sq)
+    if e == hero then
+         -- if player step into the room
+        for k, v in pairs(zone_table) do
+            if mid(v.x+1, v.x+v.w-1, hero.sq.px) == hero.sq.px
+            and mid(v.y+1, v.y+v.h-1, hero.sq.py) == hero.sq.py
+            then
+                room_x = gsq(v.x,v.y).x
+                room_y = gsq(v.x,v.y).y 
+                room_w = v.w
+                room_h = v.h
+               
+                -- set room border, prevent access from inside out and outside in
+                map_tbl(entities , "name")
+                if not entities["barrier"] then
+                    for i=0, v.w do
+                        local locent = entity["barrier"]
+                        if gsq(v.x+i,v.y) then
+                            if gsq(v.x+i,v.y).p and gsq(v.x +i, v.y).p.type ~=-1 then
+                                xpl(gsq(v.x+i,v.y).p)
+                            end
+                            local mk = locent.new_entity(v.x+i,v.y)
+                            mk.dr = locent.dr
+                            mode.load_entities(mk)
+                        end
+                       
+                        if gsq(v.x+i,v.y+v.h) then
+                            if gsq(v.x+i,v.y+v.h).p and gsq(v.x +i, v.y +v.h).p.type ~=-1 then
+                                xpl(gsq(v.x+i,v.y+v.h).p)
+                            end
+                            local mk2 = locent.new_entity(v.x+i,v.y+v.h)
+                        
+                            mk2.dr = locent.dr
+                            mode.load_entities(mk2)
+                        end
+                    end
+
+                    for i=0, v.h do
+                        local locent = entity["barrier"]
+                        if gsq(v.x,v.y+i) then
+                            if gsq(v.x,v.y+i).p and gsq(v.x , v.y+i).p.type ~=-1 then
+                                xpl(gsq(v.x,v.y+i).p)
+                            end
+                            local mk = locent.new_entity(v.x,v.y+i)
+                            mk.dr = locent.dr
+                            mode.load_entities(mk)
+                        end
+                      
+                        if gsq(v.x +v.w,v.y+i) then
+                            if gsq(v.x +v.w,v.y+i).p and gsq(v.x +v.w,v.y+i).p.type ~=-1 then
+                                xpl(gsq(v.x +v.w,v.y+i).p)
+                            end
+                            local mk2 = locent.new_entity(v.x +v.w,v.y+i)
+                            mk2.dr = locent.dr
+                            mode.load_entities(mk2)
+                        end
+                    end
+
+                    local space = {}
+                    for i = 1, v.w-1 do
+                        for j = 1, v.h-1 do
+                            local sq = gsq(v.x+i, v.y+j)
+                            if is_free(sq) then
+                                add(space, sq)
+                            end
+                        end
+                    end
+                    -- randomly spawn num troops of encouter table in the room
+                    for i=1, v.num do
+                        local r = irnd(#encounter_table)+1
+                        add_event(ev_zone_spawn, k, space, encounter_table[r])
+                    end
+                end
+                
+                break
+            end
+        end
+        start_camera_follow()
+    end
+end, "track_camera")
+
 -- TUTO
 require("planner/tuto_content.lua")
 -- TUTO PANEL
@@ -2795,21 +3228,21 @@ function create_panels()
         ctrl_panel.dp=DP_INTER
         ctrl_panel.ctrl_info=1
         ctrl_panel.dr=dr_tuto_panel
-        ctrl_panel.x=(3*MCW+8*SQ)/4+100
+        ctrl_panel.x=(3*MCW+8*SQ)/4+100 + (camera_x or 0)
     end
     if not chess_panel then
         chess_panel=mke()
         chess_panel.dp=DP_INTER
         chess_panel.ctrl_info=2
         chess_panel.dr=dr_tuto_panel
-        chess_panel.x=(MCW-8*SQ)/4-100
+        chess_panel.x=(MCW-8*SQ)/4-100 + (camera_x or 0)
     end
     
     if not medal_panel then
         medal_panel = mke()
         medal_panel.dp = DP_INTER
         medal_panel.dr = dr_tuto_panel
-        medal_panel.x= 42-100
+        medal_panel.x= 42-100 +(camera_x or 0)
         medal_panel.ctrl_info =3
     end
 
@@ -2818,14 +3251,14 @@ end
 
 function ev_show_tuto_panels(name)
     name_panel=name
-    chess_panel.x=(MCW-8*SQ)/4-100
+    chess_panel.x=(MCW-8*SQ)/4-100 + (camera_x or 0)
 	if not mode.no_shotgun then chess_panel.x = chess_panel.x-12 end
 	mv(chess_panel,100,0,30)
 
-	ctrl_panel.x=(3*MCW+8*SQ)/4+100+13
+	ctrl_panel.x=(3*MCW+8*SQ)/4+100+13+ (camera_x or 0)
 	mv(ctrl_panel,-100,0,30)
 
-    medal_panel.x=42-100
+    medal_panel.x=42-100+ (camera_x or 0)
     mv(medal_panel, 100, 0, 50)
 
 	wait(30,event_nxt)
@@ -2833,7 +3266,7 @@ end
 
 function dr_tuto_panel(e,x,y)
 	local h=content_tuto_panel(e, x, -5000)+5000
-	content_tuto_panel(e, x, (MCH-h)/2+4)
+	content_tuto_panel(e, x, (MCH-h)/2+(camera_y or 0)+4)
 end
 
 function content_tuto_panel(e, x, pY)
@@ -2975,14 +3408,37 @@ local function add_move_events(events)
 end
 local function add_emote_events(events)
     local count = 0
-    local keys = {}
+    local str_keys = {}
+    local levels = {}
+    local ent_index ={}
+
     for k, _ in pairs(events) do
-        if type(k) == "string" then
-            add(keys, k)
+        if type(k) =="number" then
+            add(levels, k)
         end
     end
+    for level in all(levels) do
+        for v in all(events[level]) do
+            if v.ev == mk_entity and tbl_has({"plant","chest","keychest", "keychest2","door","keydoor","keydoor2","passdoor", "camp_fire", "pot1", "pot2","pot3","pot4","double_chain"}, v.params[1]) then
+                if not ent_index[v.params[1].. level] then
+                    ent_index[v.params[1].. level] = 0
+                end
+                ent_index[v.params[1].. level] = ent_index[v.params[1].. level] + 1
+                local name = v.params[1] .. level .. "_" .. ent_index[v.params[1].. level]
+                if not events[name] then
+                    events[name] = {}
+                end
+            end
+        end
+        
+    end
 
-    for v in all(keys) do
+    for k, _ in pairs(events) do 
+        if type(k) == "string" and k~="set_up" and k~="pre_event" and k~="post_event" and better_sub(k,1,5)~="move_" and better_sub(k,2)~= "_unlock" and better_sub(k,2)~= "_solved"  then
+            add(str_keys, k)
+        end
+    end
+    for v in all(str_keys) do
         if events[v .."_noleft"] then
             add(events[v .."_noleft"], {ev=ev_down_dialogue, params={"noleft"}})
         else
@@ -3053,12 +3509,32 @@ local function convert_events(events)
         end
     end
 end
+local function insert_events(events)
+    if events["pre_event"] then
+        for value in all(events) do
+            for i = #events["pre_event"], 1, -1 do
+                add(value, events["pre_event"][i], 1)
+            end
+        end
+
+    end
+    if events["post_event"] then
+        for value in all(events) do
+            add_content(value, events["post_event"] )
+        end
+        if events[0] then
+            add_content(events[0], events["post_event"] )
+        end
+    end
+end
 -- Add move_N elements to the general_events[mode_id] table
-for _, v in pairs(general_events) do
+
+for k, v in pairs(general_events) do
+    insert_events(v)
     convert_events(v)
     add_bound(v)
     add_move_events(v)
-    add_emote_events(v)
+    add_emote_events(v) 
 end
 
 -- Shortcuts
@@ -3071,6 +3547,12 @@ defbtn("x",0,"k:x")
 defbtn("mcm",0,"m:mb")
 
 function upd()
+    if camera_x then
+        mx = mx + camera_x
+    end
+    if camera_y then
+        my = my + camera_y
+    end
 	if btnp("f") then
         if not hero then return end
         if not hero.sq then return end
@@ -3299,26 +3781,25 @@ function upd()
             end
         end
     end
-
     if btnp("v") then
         if objectives then
-            if objectives.y ==18 then
+            if objectives.status then
                 hide_objectives()
-            elseif objectives.y ==18-500 then
+            else
                 show_objectives()
             end
         end
 
     end
-
     if btnp("h") then
-        _log(test.openSesame(count_event, "mode.history"))
-    local txt=""
-    for k, v in pairs(bestTries) do
-        txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
-    end
-        clipboard(txt)
-    end
+        -- local h = mk_hint_but(-50, -50, 100, 100, "Hint")
+        _log(test.openSesame(menu,"menu"))
+        local txt=""
+        for k, v in pairs(bestTries) do
+            txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
+        end
+            clipboard(txt)
+        end
     if playing and btnr("z") then
         local Return = function(base) 
             local buffer = 600
@@ -3332,10 +3813,17 @@ function upd()
         if mode_id =="puzzle" then
             if mode.lvl ==1 or mode.lvl ==7 then
                 return
-            elseif mode.lvl <7 or mode.lvl ==100 then
+            elseif mode.lvl <7 then
                 Return(1)
             elseif mode.lvl <14 then
                 Return(7)
+            end
+        elseif mode_id =="card_thief" and DEV then
+            if mode.lvl ==1 or mode.lvl ==7 then
+                return
+            elseif mode.lvl <7 then
+                add(mode.destination,{hero.sq.px, hero.sq.py, 4,4}) 
+                Return(1)
             end
         end
     end
@@ -3354,6 +3842,25 @@ function upd()
             sq.draft= false
         end
     end
+
+    if btnp("k:tab") then
+        if show_player_status then
+            -- fade_to(0.1, 10)
+            show_player_status = false
+
+        else
+            -- fade_to(-0.1, 10)
+            show_player_status = true
+            hide_edit_panel()
+
+        end
+
+        wait(TEMPO, function ()
+            remove_buts()
+            play()
+        end)
+    end
+
     if DEV and rov and mcl then
         selected= rov
         if edit_panel then
@@ -3387,7 +3894,6 @@ function upd()
             piece.shield=stats.shield
             piece.protect=stats.protect
             piece.airy = stats.airy
-
             piece.pike = stats.pike
             if piece.pike and #piece.behavior == #(PIECES_TYPES[stats[1]].behavior) then
                 add(piece.behavior, { id="line",1,1,2,  atk=1, fatality="pike" })
@@ -3423,6 +3929,22 @@ function upd()
     dev_move_selected("down")
     dev_move_selected("left")
     dev_move_selected("right")
+
+    if DEV then
+        if btn("k:i") then
+            camera_y = camera_y and camera_y - 5 or -5
+        elseif btn("k:k") then
+            camera_y = camera_y and camera_y + 5 or 5
+        elseif btn("k:j") then
+            camera_x = camera_x and camera_x - 5 or -5
+        elseif btn("k:l") then
+            camera_x = camera_x and camera_x + 5 or 5
+        end
+        if btnr("k:i") or btnr("k:k") or btnr("k:j") or btnr("k:l") then
+            remove_buts()
+            play()
+        end
+    end
 end
 function set_updater()
 	local e = mke()
@@ -3467,17 +3989,34 @@ autocalls = {
             if v.draft then
                 v.draft = false
             end
-            if DEV and v.p and v.p.jail and v.p.old_upd then
+            if v.p and ((DEV and v.p.jail and v.p.old_upd) or (v.p.bad and v.p.status == false)) then
                 v.p.cd = v.p.cd-1
             end
         end
+       
     end},
     on_bad_death = {function(p) 
         if p == selected and edit_panel then
             hide_edit_panel()
         end
-        if p.x==-1309 and p.y==-1309 then
+        if p.type ==-1 and p.name ~="barrel" then
             mode.del_entity(p.name, p.wsq and p.wsq.px or p.psq.px, p.wsq and p.wsq.py or p.psq.py)
+        end
+        if p.room and zone_table[p.room] then
+            zone_table[p.room].amount = zone_table[p.room].amount - 1
+            if zone_table[p.room].amount == 0 then
+                mode.del_entity("barrier")
+                deli(zone_table, p.room)
+                
+                -- reset camera and room x,y,w,h when player leave the room
+                room_x = nil
+                room_y = nil
+                room_w = nil
+                room_h = nil
+            end
+        end
+        if p.drop then
+           add_card(p.drop)
         end
     end},
     on_hero_death= {function ()
@@ -3490,6 +4029,11 @@ autocalls = {
 
         kl(card_set_button)
         card_set_button = nil
+
+        room_x = nil
+        room_y = nil
+        room_w = nil
+        room_h = nil
     end}
 }
 
@@ -3504,6 +4048,97 @@ function set_autocall()
 	end end
 end
 append("set_mode",set_autocall,"terminal autocall")
+
+append("play", function() 
+    for e in all(ents) do
+        if e.iscard then
+            for sl in all(card_slots) do
+                local ca = sl.ca
+                if ca and e.x == sl.x and e.y == sl.y then
+                    sl.startX = sl.x
+                    sl.startY = sl.y
+                    e.startX = e.x
+                    e.startY = e.y
+                    e.upd = function()
+                        local offset = e.startX <100 and -1000 or 1000
+                        e.x = e.startX+ (camera_x or 0)+ (show_player_status and 0 or offset)
+                        e.y = e.startY+ (camera_y or 0)
+                    end
+                    sl.upd = function ()
+                        local offset = sl.startX <100 and -1000 or 1000
+                        sl.x = sl.startX+ (camera_x or 0) + (show_player_status and 0 or offset)
+                        sl.y = sl.startY+ (camera_y or 0)
+                        if sl.ca then
+                            sl.ca.x = sl.x
+                            sl.ca.y = sl.y
+                        end
+                    end
+                end
+            end
+        else
+            for sl in all(card_slots) do
+                if e.x == sl.x and e.y == sl.y then
+                    sl.startX = sl.x
+                    sl.startY = sl.y
+                    sl.upd = function ()    
+                        local offset = sl.startX <100 and -1000 or 1000
+                        sl.x = sl.startX+ (camera_x or 0) + (show_player_status and 0 or offset)
+                        sl.y = sl.startY+ (camera_y or 0)
+                        if sl.ca then
+                            sl.ca.x = sl.x
+                            sl.ca.y = sl.y
+                        end
+                    end
+                end
+            end
+        end
+    end
+    append("play", function() end , "responsive card slot")
+
+end , "responsive card slot")
+
+
+append("new_level", function() 
+    n_soul_slot = 0
+    offSoul = mke()
+    offSoul.upd = function()
+        local i = 0
+        for v in all(ents) do
+            if (v.x == 135+board_x or v.x == 135+ 16 +board_x or v.x == 135- 16 +board_x or (xmax >10 and (v.x == 135+96))) and not v.issq then
+                n_soul_slot = v.index or n_soul_slot+1
+                v.index= n_soul_slot
+                v.dp = DP_TOP-1
+                v.upd = function()
+                    v.x = 270+ (camera_x or 0) + (show_player_status and 1000 or 0)
+                    v.y = 78 - 32 * ((n_soul_slot-1)/2) + 32 * (v.index-1) + (camera_y or 0)
+                end
+            
+            end
+        end  
+    end
+    offSoul.life = TEMPO
+    append("add_soul_slot", function ()
+        offSoul = mke()
+        offSoul.upd = function()
+            local i = 0
+            for v in all(ents) do
+                if (v.x == 135+board_x or v.x == 135+ 16 +board_x or v.x == 135- 16 +board_x or (xmax >10 and (v.x == 135+96))) and not v.issq then
+                    n_soul_slot = v.index or n_soul_slot+1
+                    v.index= n_soul_slot
+                    v.dp = DP_TOP-1
+                    v.upd = function()
+                        v.x = 270+ (camera_x or 0) + (show_player_status and 1000 or 0)
+                        v.y = 78 - 32 * ((n_soul_slot-1)/2) + 32 * (v.index-1) + (camera_y or 0)
+                    end
+                
+                end
+            end  
+        end
+        offSoul.life = TEMPO
+    end, "responsive soul slot 1")
+
+   
+end , "responsive soul slot")
 
 append("init_game",set_all_drawing,"terminal drawing")
 append("init_game",set_updater,"updater")
@@ -3546,11 +4181,15 @@ append("set_mode", function()
     function mode.set_id(id)
         mode_id = id
     end
-    
+    function mode.set_camera(x,y)
+        camera_x = x
+        camera_y = y
+    end
+
     function mode.get_start_sq(f)
         get_start_sq = f
     end
-  
+
     function mode.load_entities(entity)
         add(entities,entity)
     end
@@ -3617,6 +4256,21 @@ append("set_mode", function()
                 gsq(px,py).danger = {}
             end
             entities={}
+        elseif not px then
+            for i = #entities, 1, -1 do
+                local v = entities[i]
+                if v.name == name then
+                    kl(v)
+                    local px = ceil(v.x/SQ)
+                    local py = ceil(v.y/SQ)
+                    gsq(px,py).upd = nil
+                    gsq(px,py).p = nil 
+                    gsq(px,py).op = nil 
+                    gsq(px,py).highlight = true 
+                    gsq(px,py).danger = {}
+                    deli(entities,i)
+                end
+            end
         else
             for k, v in pairs(entities) do
                 if v.name == name and ceil(v.x/SQ) == px and ceil(v.y/SQ) == py then
@@ -3685,13 +4339,13 @@ append("set_mode", function()
                 dev_save_entity= SAVE[id].dev_save_entity
             end
             if SAVE[id].room_event_entity then
-                room_event_entity= SAVE[id].room_event_entity
+                room_event_entity= clone(SAVE[id].room_event_entity,true)
             end
             if SAVE[id].room_prelude_entity then
-                room_prelude_entity= SAVE[id].room_prelude_entity
+                room_prelude_entity= clone(SAVE[id].room_prelude_entity, true)
             end
             if SAVE[id].hero_status then
-                hero_status = SAVE[id].hero_status
+                hero_status = clone(SAVE[id].hero_status,true)
             end
         else
             SAVE[id]= {}
@@ -3730,8 +4384,8 @@ end, "event_functions")
 function on_sq_but_init(but,sq)
     
 end
+
 if DEV then
-    add(TEST_CARDS, "Pawn")
     add(TEST_CARDS, "Knight")
     add(TEST_CARDS, "Bishop")
     add(TEST_CARDS, "Rook")
@@ -3741,6 +4395,9 @@ if DEV then
     add(TEST_CARDS, "Nightrider")
     add(TEST_CARDS, "Cannonball")
     add(TEST_CARDS, "Patrol")
+    add(TEST_CARDS, "Nightbane")
+
+    -- add(TEST_CARDS, "Satchel")
 end
 local drag_ca
 function on_card_but_init(but,ca)
@@ -3786,7 +4443,18 @@ function on_card_but_init(but,ca)
                             p.jail = true
                             p.prison_bar = 1
                             p.sanctity = 1
+                            if p.bad then
+                                local radius = get_zone(p.sq, VISION)
+                                for sq in all(radius) do
+                                    if sq.p and (sq.p.bad == false or sq.p == hero) then
+                                        p.status = true
+                                        return
+                                    end
+                                end
+                                p.status = false
+                            end
                         end
+
                         selected = p
                         if edit_panel then
                             show_edit_panel()
@@ -3806,6 +4474,16 @@ function on_card_but_init(but,ca)
                             p.jail = true
                             p.prison_bar = 1
                             p.sanctity = 1
+                            if p.bad then
+                                local radius = get_zone(p.sq, VISION)
+                                for sq in all(radius) do
+                                    if sq.p and (sq.p.bad == false or sq.p == hero) then
+                                        p.status = true
+                                        return
+                                    end
+                                end
+                                p.status = false
+                            end
                         end
                         selected = p
                         if edit_panel then
@@ -4018,6 +4696,7 @@ function on_card_but_init(but,ca)
 			end
 			loop(f)
 		end
+        
     end
 end
 
@@ -4091,12 +4770,86 @@ end
 defbtn("e",0,"k:e")
 defbtn("b",0,"k:b")
 defbtn("g",0,"k:g")
-function draw_0()end
-function draw_1()end
+
+function clip_screen(tbl)
+    if tbl and #tbl >0 then
+        local x, y , w , h ,use_cam = unpack(tbl)
+        if (type(x) == "string" or type(y) =="string") and hero and hero.sq then
+        -- Directional placement based on mouse and hero position
+            local temp
+            w = w + SQ* (flr(stack.spread/10)-2)
+            h = h + SQ* (stack.firerange+1)
+            if my - hero.sq.y < 0 and mid(hero.sq.x, mx, hero.sq.x + 16) == mx then
+                -- UP
+                x = hero.sq.x - w / 2 + 8
+                y = hero.sq.y - h + 16
+            elseif my - hero.sq.y > 0 and mid(hero.sq.x, mx, hero.sq.x + 16) == mx then
+                -- DOWN
+                x = hero.sq.x - w / 2 + 8
+                y = hero.sq.y
+            elseif mx < hero.sq.x and mid(hero.sq.y, my, hero.sq.y + 16) == my then
+                -- LEFT
+                temp = w
+                w = h
+                h = temp
+                x = hero.sq.x - w + 16
+                y = hero.sq.y + 8 - h / 2
+            elseif mx > hero.sq.x and mid(hero.sq.y, my, hero.sq.y + 16) == my then
+                -- RIGHT
+                temp = w
+                w = h
+                h = temp
+                x = hero.sq.x
+                y = hero.sq.y + 8 - h / 2
+            elseif my - hero.sq.y < 0 and mx < hero.sq.x then
+                -- UP_LEFT
+                temp = w
+                w = h
+                h = temp
+                x = hero.sq.x + 16 - w
+                y = hero.sq.y + 16 - h
+            elseif my - hero.sq.y < 0 and mx > hero.sq.x then
+                -- UP_RIGHT
+                temp = w
+                w = h
+                h = temp
+                x = hero.sq.x
+                y = hero.sq.y + 16 - h
+            elseif my - hero.sq.y > 0 and mx > hero.sq.x then
+                -- DOWN_RIGHT
+                temp = w
+                w = h
+                h = temp
+                x = hero.sq.x
+                y = hero.sq.y
+            elseif my - hero.sq.y > 0 and mx < hero.sq.x then
+                -- DOWN_LEFT
+                temp = w
+                w = h
+                h = temp
+                x = hero.sq.x + 16 - w
+                y = hero.sq.y
+            else
+                -- Default fallback (centered)
+                x = hero.sq.x - w / 2 + 8
+                y = hero.sq.y + 8 - h / 2
+            end
+
+        end
+        clip( x, y , w , h ,use_cam)
+    end
+end
+function draw_0()
+    camera(camera_x or 0, camera_y or 0)
+    clip_screen(clip_screen_0)
+end
+function draw_1()
+    clip_screen(clip_screen_1)
+end
 function draw_2()
     local old_spr = spritesheet()
     spritesheet("customtiles")
-  
+    clip_screen(clip_screen_2)
     for k, v in pairs(bads) do
         if v.inert or v.cd <= -100 then
             spr(47, v.x, v.y)
@@ -4133,8 +4886,12 @@ function draw_2()
     spritesheet(old_spr)
 
 end
-function draw_3()end
+function draw_3()
+   clip_screen(clip_screen_3)
+end
 function draw_4()
+    clip_screen(clip_screen_4)
+
 	if drag_ca and get_square_at(mx,my) then
         if drag_ca.piece then
             spritesheet("pieces")
@@ -4152,10 +4909,20 @@ function draw_4()
 	end
 end
 function draw_5()
-
+    clip_screen(clip_screen_5)
 end
 function draw_6()
-	if btn("e") and DEV then for k,e in pairs(ents) do if not e.glacies then lprint(k,e.x,e.y,5, 0, 4) end end end
-	if btn("b") and DEV then for k,e in pairs(ents) do if not e.glacies and e.button then lprint(k,e.x,e.y,5,0,4) end end end
-	if btn("g") and DEV then lprint(mx..","..my, 5, 173,5,0,4) end
+    clip_screen(clip_screen_6)
+
+	if btn("e") and DEV then for k,e in pairs(ents) do if not e.issq then lprint(k,e.x,e.y,5, 0, 4) end end end
+	if btn("b") and DEV then for k,e in pairs(ents) do if not e.issq and e.button then lprint(k,e.x,e.y,5,0,4) end end end
+	if btn("g") and DEV then lprint(mx..","..my..","..(get_square_at(mx,my) and get_square_at(mx,my).px or "nil")..","..(get_square_at(mx,my) and get_square_at(mx,my).py or "nil"), 5+(camera_x or 0), 173+(camera_y or 0),5,0,4) end
 end
+-- append("colorize_piece",function (a,b,c,d,e,f)
+--     _log(test.openSesame(a, "a"))
+--     _log(test.openSesame(b, "b"))
+--     _log(test.openSesame(c, "c"))
+--     _log(test.openSesame(d, "d"))
+--     _log(test.openSesame(e, "e"))
+--     _log(test.openSesame(f, "f"))
+-- end,"tracking")

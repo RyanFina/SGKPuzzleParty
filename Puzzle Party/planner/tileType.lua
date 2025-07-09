@@ -120,6 +120,7 @@ local function continue_play()
     remove_buts()
     wait(TEMPO, play)
 end
+
 tileType = {
     phoenix = {
         dr = function(_, x, y)
@@ -708,6 +709,25 @@ tileType = {
             end
 
         end
+    },
+    instinct_repressed={
+        upd = function(sq, x, y)
+            if not sq.entered then
+                check_folly_shields(dsq(sq,0))
+                check_folly_shields(dsq(sq,1))
+                check_folly_shields(dsq(sq,2))
+                check_folly_shields(dsq(sq,3))
+            end
+        end,
+        onEnter=function(e,sq)
+            setEnter(sq)
+        end,
+        dr = function(sq, x, y)
+            if sq.entered then
+                dr_tile(47, x, y)
+            else
+                dr_tile(53, x, y) 
+            end 
+        end
     }
-
 }

@@ -1,5 +1,7 @@
 -- Adding new custom cards.
 local new_cards = {
+    { gid= 1, team =0, n=1, pwe =1, id="Satchel", amount = 0},
+
     { gid=0, team=0, n=50, pwe=1, id="Pawn",	type_piece=0, piece=1 },
     { gid=1, team=0, n=50, pwe=1, id="Knight", type_piece=1, piece=1 },
     { gid=2, team=0, n=50, pwe=1, id="Bishop",type_piece=2, piece=1 },
@@ -45,6 +47,27 @@ local new_cards = {
     { gid=41, team=0, n=50, pwe=1, id="Key Door", type_entity="keydoor", entity=1},
     { gid=42, team=0, n=50, pwe=1, id="Key Door 2", type_entity="keydoor2", entity=1},
 
+    { gid=60, team=0, n=50, pwe=1, id="Left Horizontal Wall", type_entity="left_horizontal_wall", entity=1},
+    { gid=61, team=0, n=50, pwe=1, id="Middle Horizontal Wall", type_entity="middle_horizontal_wall", entity=1},
+    { gid=62, team=0, n=50, pwe=1, id="Right Horizontal Wall", type_entity="right_horizontal_wall", entity=1},
+
+    { gid=64, team=0, n=50, pwe=1, id="Top Left Large Wall", type_entity="top_left_lg_wall", entity=1},
+    { gid=65, team=0, n=50, pwe=1, id="Top Middle Large Wall", type_entity="top_middle_lg_wall", entity=1},
+    { gid=66, team=0, n=50, pwe=1, id="Top Right Large Wall", type_entity="top_right_lg_wall", entity=1},
+
+    { gid=67, team=0, n=50, pwe=1, id="Left Middle Large Wall", type_entity="mid_left_lg_wall", entity=1},
+    { gid=68, team=0, n=50, pwe=1, id="Mid Middle Large Wall", type_entity="mid_middle_lg_wall", entity=1},
+    { gid=69, team=0, n=50, pwe=1, id="Right Middle Large Wall", type_entity="mid_right_lg_wall", entity=1},
+
+    { gid=70, team=0, n=50, pwe=1, id="Bottom Left Large Wall", type_entity="bot_left_lg_wall", entity=1},
+    { gid=71, team=0, n=50, pwe=1, id="Bottom Middle Large Wall", type_entity="bot_middle_lg_wall", entity=1},
+    { gid=72, team=0, n=50, pwe=1, id="Bottom Right Large Wall", type_entity="bot_right_lg_wall", entity=1},
+
+    { gid=73, team=0, n=50, pwe=1, id="Up Vertical Wall", type_entity="up_vertical_wall", entity=1},
+    { gid=74, team=0, n=50, pwe=1, id="Middle Vertical Wall", type_entity="middle_vertical_wall", entity=1},
+    { gid=75, team=0, n=50, pwe=1, id="Down Vertical Wall", type_entity="down_vertical_wall", entity=1},
+
+    { gid=63, team=0, n=50, pwe=1, id="Singular Wall", type_entity="singular_wall", entity=1},
 }
 
 local exclude = {

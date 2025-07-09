@@ -1,9 +1,17 @@
 newsrf("planner/smol_entity.png", "smol_entities")
+newsrf("planner/mid_entity.png", "mid_entities")
 function dr_entity(id, x, y)
     local oldSp = spritesheet()
     spritesheet("smol_entities")
     -- sspr(id * 16, 0, 16, 16, x, y)
     spr(id, x, y)
+    spritesheet(oldSp)
+end
+
+function dr_mid_entity(id, x, y)
+    local oldSp = spritesheet()
+    spritesheet("mid_entities")
+    sspr(id * 48, 0, 48, 48, x-16, y-32)
     spritesheet(oldSp)
 end
 function is_subset(subset, superset)
@@ -79,17 +87,184 @@ function generate_dummy(name, px, py, info)
             end
         end
     end
-
-    return square
 end
-entity = {
 
+function create_singular_entity(name, id, info)
+    local tbl = {
+        new_entity = function(px, py)
+            if gsq(px,py) then
+                local ent = mke()
+                add_child(board,ent)
+                ent.name= name
+                ent.y=py*SQ-1
+                ent.x = px*SQ
+                ent.dp=DP_PIECES
+                generate_dummy(ent.name, px,py, info)
+                return ent
+            end
+        end,
+        dr= function(_,x,y)
+            if type(id)=="number" then
+                dr_entity(id,x,y)
+            elseif type(id)=="table" then
+                local start, endd, duration = unpack(id)
+                dr_entity(cyc(endd-start, duration)+start,x,y)
+            end
+        end,
+    }
+    entity[name] = tbl
+end
+
+function create_double_state_entity(name, id1, id2, self_destruct, f, info)
+    local tbl ={
+        new_entity = function(px, py)
+            if gsq(px,py) then
+                local ent = mke()
+                local square = gsq(px,py)
+                add_child(board,ent)
+                ent.inter= false
+                ent.name= name
+                ent.y=py*SQ-1
+                ent.x = px*SQ
+                ent.dp=DP_PIECES
+                generate_dummy(ent.name, px,py, info)
+                square.upd = function(self)
+                    if square and square.p and square.p.event and not ent.inter then
+                        if (square.p.repeatable == nil and is_subset({square.p.event[1]}, history)) or
+                            (square.p.repeatable ~=nil and is_subset(square.p.event, history)) then
+                            ent.inter = true
+                            if self_destruct then
+                                square.p = nil 
+                                square.op = nil 
+                                square.highlight = true 
+                                square.danger = {}
+                            end
+                            if f then
+                                f()
+                            end
+                            if hero then
+                            remove_buts()
+                            play()
+                            end
+                        end           
+                    end
+                end
+                return ent
+            end
+        end,
+        dr= function(e,x,y)
+            if e.inter then
+                if type(id2)=="number" then
+                    dr_entity(id2,x,y)
+                elseif type(id2)=="table" then
+                    local start, endd, duration = unpack(id2)
+                    dr_entity(cyc(endd-start+1, duration)+start,x,y)
+                end
+            else
+                if type(id1)=="number" then
+                    dr_entity(id1,x,y)
+                elseif type(id1)=="table" then
+                    local start, endd, duration = unpack(id1)
+                    dr_entity(cyc(endd-start+1, duration)+start,x,y)
+                end
+            end    
+        end,
+    }
+    entity[name] = tbl
+end
+
+function create_singular_mid_entity(name, id, info)
+    local tbl = {
+        new_entity = function(px, py)
+            if gsq(px,py) then
+                local ent = mke()
+                add_child(board,ent)
+                ent.name= name
+                ent.y=py*SQ-1
+                ent.x = px*SQ
+                ent.dp=DP_PIECES
+                generate_dummy(ent.name, px,py, info)
+                return ent
+            end
+        end,
+        dr= function(_,x,y)
+            if type(id)=="number" then
+                dr_mid_entity(id,x,y)
+            elseif type(id)=="table" then
+                local start, endd, duration = unpack(id)
+                dr_mid_entity(cyc(endd-start, duration)+start,x,y)
+            end
+        end,
+    }
+    entity[name] = tbl
+end
+
+function create_double_state_mid_entity(name, id1, id2, self_destruct, f, info)
+    local tbl ={
+        new_entity = function(px, py)
+            if gsq(px,py) then
+                local ent = mke()
+                local square = gsq(px,py)
+                add_child(board,ent)
+                ent.inter= false
+                ent.name= name
+                ent.y=py*SQ-1
+                ent.x = px*SQ
+                ent.dp=DP_PIECES
+                generate_dummy(ent.name, px,py, info)
+                square.upd = function(self)
+                    if square and square.p and square.p.event and not ent.inter then
+                        if (square.p.repeatable == nil and is_subset({square.p.event[1]}, history)) or
+                            (square.p.repeatable ~=nil and is_subset(square.p.event, history)) then
+                            
+                            ent.inter = true
+                            if self_destruct then
+                                square.p = nil 
+                                square.op = nil 
+                                square.highlight = true 
+                                square.danger = {}
+                            end
+                            if f then
+                                f()
+                            end
+                            if hero then
+                            remove_buts()
+                            play()
+                            end
+                        end           
+                    end
+                end
+                return ent
+            end
+        end,
+        dr= function(e,x,y)
+            if e.inter then
+                if type(id2)=="number" then
+                    dr_mid_entity(id2,x,y)
+                elseif type(id2)=="table" then
+                    local start, endd, duration = unpack(id2)
+                    dr_mid_entity(cyc(endd-start+1, duration)+start,x,y)
+                end
+            else
+                if type(id1)=="number" then
+                    dr_mid_entity(id1,x,y)
+                elseif type(id1)=="table" then
+                    local start, endd, duration = unpack(id1)
+                    dr_mid_entity(cyc(endd-start+1, duration)+start,x,y)
+                end
+            end    
+        end,
+    }
+    entity[name] = tbl
+end
+
+entity = {
         altar={
             new_entity = function(px,py)
                 local altar=mke()
                 add_child(board,altar)
                 altar.name="altar"
-                altar.y=5*SQ
+                altar.y=5*SQ-1
                 altar.dp=DP_PIECES
                 altar.c_deep=60+irnd(60)	
                 local piece = generate_dummy(altar.name, px,py)
@@ -102,7 +277,7 @@ entity = {
                     y=y+c*20
                     pal_inc(min(0,1-c*5))
                 end
-                spritesheet("tutorial")
+                      spritesheet("tutorial")
                 if mode.no_shotgun then
                     sspr(144,32,48,32,x,y)
                 else
@@ -121,7 +296,7 @@ entity = {
             end,
             dr=function(e,x,y)
                 spritesheet("tutorial")
-                sspr(16,0,192,30,-32,SQ*8)
+                sspr(16,0,192,30,-32,SQ*40)
                 spritesheet("gfx")
             end
         },
@@ -165,447 +340,46 @@ entity = {
                 end
             end
         },
-
-        wall = {
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local wall = mke()
-                    add_child(board,wall)
-                    wall.name= "wall"
-                    wall.y=py*SQ-1
-                    wall.x = px*SQ
-                    wall.dp=DP_PIECES
-                    local piece = generate_dummy(wall.name, px,py)
-                    return wall
-                end
-            end,
-            dr= function(_,x,y)
-                dr_entity(19,x,y)
-            end,
-        },
-
-        door={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local door = mke()
-                    door.inter = false
-                    add_child(board,door)
-                    door.name= "door"
-                    door.y=py*SQ-1
-                    door.x = px*SQ
-                    door.dp=DP_PIECES
-                    local piece = generate_dummy(door.name, px,py)
-                    piece.upd = function()
-                        if (gsq(px,py).p and gsq(px,py).p.event and is_subset(gsq(px,py).p.event, mode.history())) then
-                            sfx("shoot")
-                            door.inter = true
-                            gsq(px,py).p = nil 
-                            gsq(px,py).op = nil 
-                            gsq(px,py).highlight = true 
-                            gsq(px,py).danger = {}
-                            if hero then
-                                remove_buts()
-                                play()
-                            end
-                        end
-                    end
-                    return door
-                end
-            end,
-            dr= function(e,x,y)
-                -- interacted door condition
-                if e.inter then
-                    dr_entity(9,x,y)
-                else
-                    dr_entity(8,x,y)
-                end    
-            end,
-        },
-
-        plant={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local plant = mke()
-                    local square = gsq(px,py)
-                    add_child(board,plant)
-                    plant.inter= false
-                    plant.name= "plant"
-                    plant.y=py*SQ-1
-                    plant.x = px*SQ
-                    plant.dp=DP_PIECES
-                    local piece = generate_dummy(plant.name, px,py)
-                    piece.upd = function(self)
-                        if square and square.p and square.p.event and not plant.inter then
-                            if (square.p.repeatable == nil and is_subset({gsq(px,py).p.event[1]}, mode.history())) or
-                               (square.p.repeatable ~=nil and is_subset(gsq(px,py).p.event, mode.history())) then
-                                plant.inter = true
-                                if hero then
-                                    remove_buts()
-                                    play()
-                                end
-                            end           
-                        end
-                    end
-                    return plant
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(1,x,y)
-                else
-                    dr_entity(0,x,y)
-                end    
-            end,
-        },
-  
-        removeable_plant = {
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local removeable_plant = mke()
-                    local square = gsq(px,py)
-                    add_child(board,removeable_plant)
-                    removeable_plant.inter= false
-                    removeable_plant.name= "removeable_plant"
-                    removeable_plant.y=py*SQ-1
-                    removeable_plant.x = px*SQ
-                    removeable_plant.dp=DP_PIECES
-                    local piece = generate_dummy(removeable_plant.name, px,py)
-                    piece.upd = function(self)
-                        if square and square.p and square.p.event and not removeable_plant.inter then
-                            if (square.p.repeatable == nil and is_subset({gsq(px,py).p.event[1]}, mode.history())) or
-                               (square.p.repeatable ~=nil and is_subset(gsq(px,py).p.event, mode.history())) then
-                             removeable_plant.inter = true
-                             if hero then
-                                remove_buts()
-                                play()
-                             end
-                            end           
-                        end
-                    end
-                    return removeable_plant
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(1,x,y) -- WIP, need better destroy plant pot
-                else
-                    dr_entity(0,x,y)
-                end    
-            end,
-        },
-        chest={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local chest = mke()
-                    local square = gsq(px,py)
-                    add_child(board,chest)
-                    chest.inter= false
-                    chest.name= "chest"
-                    chest.y=py*SQ-1
-                    chest.x = px*SQ
-                    chest.dp=DP_PIECES
-                    local piece = generate_dummy(chest.name, px,py)
-                    piece.upd = function(self)
-                        if square and square.p and square.p.event and not chest.inter then
-                            if (square.p.repeatable == nil and is_subset({gsq(px,py).p.event[1]}, mode.history())) or
-                               (square.p.repeatable ~=nil and is_subset(gsq(px,py).p.event, mode.history())) then
-                             chest.inter = true
-                             if hero then
-                                remove_buts()
-                                play()
-                             end
-                            end           
-                        end
-                    end
-                    return chest
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(3,x,y)
-                else
-                    dr_entity(2,x,y)
-                end    
-            end
-        },
-
-        keychest={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local keychest = mke()
-                    local square = gsq(px,py)
-                    add_child(board,keychest)
-                    keychest.inter= false
-                    keychest.name= "keychest"
-                    keychest.y=py*SQ-1
-                    keychest.x = px*SQ
-                    keychest.dp=DP_PIECES
-                    local piece = generate_dummy(keychest.name, px,py)
-                    piece.upd = function(self)
-                        if square and square.p and square.p.event and not keychest.inter then
-                            if (square.p.repeatable == nil and is_subset({gsq(px,py).p.event[1]}, mode.history())) or
-                               (square.p.repeatable ~=nil and is_subset(gsq(px,py).p.event, mode.history())) then
-                             keychest.inter = true
-                             if hero then
-                                remove_buts()
-                                play()
-                             end
-                            end           
-                        end
-                    end
-                    return keychest
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(7,x,y)
-                else
-                    dr_entity(6,x,y)
-                end    
-            end
-        },
-
-        keydoor={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local keydoor = mke()
-                    add_child(board,keydoor)
-                    keydoor.inter= false
-                    keydoor.name= "keydoor"
-                    keydoor.y=py*SQ-1
-                    keydoor.x = px*SQ
-                    keydoor.dp=DP_PIECES
-                    local piece = generate_dummy(keydoor.name, px,py)
-                    piece.upd = function(self)
-                        if (gsq(px, py).p and gsq(px, py).p.event and is_subset(gsq(px, py).p.event, mode.history())) then
-                            keydoor.inter = true
-                            gsq(px,py).p = nil 
-                            gsq(px,py).op = nil 
-                            gsq(px,py).highlight = true 
-                            gsq(px,py).danger = {}
-                            if hero then
-                                remove_buts()
-                                play()
-                            end
-                        end
-                    end
-                    return keydoor
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(11,x,y)
-                else
-                    dr_entity(10,x,y)
-                end    
-            end
-        },
-
-        keychest2={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local keychest2 = mke()
-                    local square = gsq(px,py)
-                    add_child(board, keychest2)
-                    keychest2.inter = false
-                    keychest2.name= "keychest2"
-                    keychest2.y = py * SQ - 1
-                    keychest2.x = px * SQ
-                    keychest2.dp = DP_PIECES
-                    keychest2.upd = function()
-                        if square and square.p and square.p.event and not keychest2.inter then
-                            if (square.p.repeatable == nil and is_subset({gsq(px,py).p.event[1]}, mode.history())) or
-                               (square.p.repeatable ~=nil and is_subset(gsq(px,py).p.event, mode.history())) then
-                                keychest2.inter = true
-                                if hero then
-                                    remove_buts()
-                                    play()
-                                end
-                            end           
-                        end
-                    end
-                    return keychest2
-                end
-            end,
-            dr= function(e,x,y)
-                 if e.inter then
-                    dr_entity(5, x, y)
-                else
-                    dr_entity(4, x, y)
-                end
-            end
-        },
-  
-        keydoor2={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local keydoor2 = mke()
-                    add_child(board, keydoor2)
-                    keydoor2.inter = false
-                    keydoor2.name= "keydoor2"
-                    keydoor2.y = py * SQ - 1
-                    keydoor2.x = px * SQ
-                    keydoor2.dp = DP_PIECES
-                    keydoor2.upd = function()
-                        if (gsq(px, py).p and gsq(px, py).p.event and is_subset(gsq(px, py).p.event, mode.history())) then
-                            keydoor2.inter = true
-                            gsq(px,py).p = nil 
-                            gsq(px,py).op = nil 
-                            gsq(px,py).highlight = true 
-                            gsq(px,py).danger = {}    
-                            if hero then
-                                remove_buts()
-                                play()
-                            end
-                        end
-                    end
-                    return keydoor2
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(13, x, y)
-                else
-                    dr_entity(12, x, y)
-                end
-            end
-        },
-
-        passdoor={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local passdoor = mke()
-                    add_child(board, passdoor)
-                    passdoor.inter = false
-                    passdoor.name= "passdoor"
-                    passdoor.y = py * SQ - 1
-                    passdoor.x = px * SQ
-                    passdoor.dp = DP_PIECES
-                    passdoor.upd = function()
-                        if (gsq(px, py).p and gsq(px, py).p.event and is_subset(gsq(px, py).p.event, mode.history())) then
-                            passdoor.inter = true
-                            gsq(px,py).p = nil 
-                            gsq(px,py).op = nil 
-                            gsq(px,py).highlight = true 
-                            gsq(px,py).danger = {}    
-                            if hero then
-                                remove_buts()
-                                play()
-                            end
-                        end
-                    end
-                    return passdoor
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(15, x, y)
-                else
-                    dr_entity(14, x, y)
-                end
-            end
-        },
-
-        passcode={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local passcode = mke()
-                    add_child(board, passcode)
-                    passcode.name= "passcode"
-                    passcode.y = py * SQ - 1
-                    passcode.x = px * SQ
-                    passcode.dp = DP_PIECES
-                    return passcode
-                end
-            end,
-            dr= function(e,x,y)
-                dr_entity(16, x, y)
-            end
-        },
-
-        cursedwall={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local cursedwall = mke()
-                    add_child(board, cursedwall)
-                    cursedwall.name= "cursedwall"
-                    cursedwall.y = py * SQ - 1
-                    cursedwall.x = px * SQ
-                    cursedwall.dp = DP_PIECES
-                    return cursedwall
-                end
-            end,
-            dr= function(e,x,y)
-                dr_entity(17, x, y)
-            end
-        },
-
-        crackedwall={
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local crackedwall = mke()
-                    add_child(board, crackedwall)
-                    crackedwall.name= "crackedwall"
-                    crackedwall.inter = false
-                    crackedwall.y = py * SQ - 1
-                    crackedwall.x = px * SQ
-                    crackedwall.dp = DP_PIECES
-                    crackedwall.upd = function()
-                        if (gsq(px, py).p and gsq(px, py).p.event and is_subset(gsq(px, py).p.event, mode.history())) then
-                            sfx("shoot")
-                            crackedwall.inter = true
-                            gsq(px,py).p = nil 
-                            gsq(px,py).op = nil 
-                            gsq(px,py).highlight = true 
-                            gsq(px,py).danger = {}
-                            sfx("boulder_xpl")
-                            if hero then
-                                remove_buts()
-                                play()
-                            end
-                        end
-                    end
-                    return crackedwall
-                end
-            end,
-            dr= function(e,x,y)
-                if e.inter then
-                    dr_entity(11, x, y) -- WIP, better destroy wall
-                else
-                    dr_entity(18, x, y)
-                end
-            end,
-        },
-
-        secrettable = function(px, py)
-            local secrettable = mke()
-            add_child(board, secrettable)
-            secrettable.name= "secrettable"
-            secrettable.y = py * SQ - 1
-            secrettable.x = px * SQ
-            secrettable.dp = DP_PIECES
-            secrettable.dr = function(e, x, y)
-                dr_entity(20, x, y)
-            end
-            return secrettable
-        end,
-
-        barrel = {
-            new_entity = function(px, py)
-                if gsq(px,py) then
-                    local barrel = mke()
-                    add_child(board,barrel)
-                    barrel.name= "barrel"
-                    barrel.y=py*SQ-1
-                    barrel.x = px*SQ
-                    barrel.dp=DP_PIECES
-                    local piece = generate_dummy(barrel.name, px,py,{freelift=1})
-                    return barrel
-                end
-            end,
-            dr= function(_,x,y)
-                dr_entity(21,x,y)
-            end,
-        },
-
 }
+
+create_double_state_entity("plant", 0,1, false, nil, {freelift=1, iron= false})
+create_double_state_entity("chest", 2,3)
+create_double_state_entity("keychest2",4,5)
+create_double_state_entity("keychest",6,7)
+create_double_state_entity("door", 8, 9, true, bind(sfx, "shoot"))
+create_double_state_entity("keydoor",10,11, true)
+create_double_state_entity("keydoor2",12,13, true)
+create_double_state_entity("passdoor",14,15, true)
+create_double_state_entity("crackedwall",18,11, true, bind(sfx, "boulder_xpl"))
+create_double_state_entity("pot1",38,39, false, nil, {freelift=1, iron= false})
+create_double_state_entity("pot2",40,41, false, nil, {freelift=1, iron= false})
+create_double_state_entity("pot3",42,43, false, nil, {freelift=1, iron= false})
+create_double_state_entity("pot4",44,45, false, nil, {freelift=1, iron= false})
+create_double_state_entity("camp_fire",49,{46,48,15})
+create_double_state_entity("candle",{50,53,15},54, false, nil, {freelift=1, iron= false})
+
+create_singular_entity("passcode",16)
+create_singular_entity("wall",19)
+create_singular_entity("barrier",19)
+create_singular_entity("cursedwall",17)
+create_singular_entity("secrettable",20)
+create_singular_entity("barrel", 21, {freelift=1})
+
+create_singular_entity("left_horizontal_wall",22)
+create_singular_entity("middle_horizontal_wall",23)
+create_singular_entity("right_horizontal_wall",24)
+create_singular_entity("top_left_lg_wall",26)
+create_singular_entity("top_middle_lg_wall",27)
+create_singular_entity("top_right_lg_wall",28)
+create_singular_entity("mid_left_lg_wall",29)
+create_singular_entity("mid_middle_lg_wall",30)
+create_singular_entity("mid_right_lg_wall",31)
+create_singular_entity("bot_left_lg_wall",32)
+create_singular_entity("bot_middle_lg_wall",33)
+create_singular_entity("bot_right_lg_wall",34)
+create_singular_entity("up_vertical_wall",35)
+create_singular_entity("middle_vertical_wall",36)
+create_singular_entity("down_vertical_wall",37)
+create_singular_entity("singular_wall",25)
+
+create_singular_mid_entity("double_chain",7)

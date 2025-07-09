@@ -1,11 +1,15 @@
 general_events = {
- puzzle = {
-        dev={},
+    --dev={--},
+    puzzle = {
         [0]={   
+            {ev=ev_set_encounter, params={{0,1, {2,2}}}},
             {ev=ev_create_edit_panel},
             {ev=ev_mk_play_button},
             {ev=ev_mk_card_set_button},
-            {ev=ev_offset_soul_slot, params=400},
+            {ev=ev_display_turn},
+            {ev=ev_focus_hero},
+            {ev=ev_zone, params={10,10,25,15,3}},
+            {ev=ev_clip_screen, params={1, "nil", "nil", 64, 112, true}},
         },
         set_up={
             {ev=create_panels}, 
@@ -15,7 +19,7 @@ general_events = {
             {ev=ev_cond, params="not_dev"},
                 {ev=ev_reset_cards},
             {ev=ev_end},
-            {ev=ev_remove_play_button},
+            {ev=ev_remove_dev_button},
      
             {ev=ev_hide_card},
             {ev=ev_set_tempo, params={"rook",0}},
@@ -156,7 +160,6 @@ general_events = {
                 {ev=ev_spawn, params={9, true, 7,6, nil, {inert=1, knockback = 0, instant = 1}}},
                 {ev=ev_spawn, params={9, true, 6,7, nil, {inert=1, knockback = 0, instant = 1}}},
             {ev=ev_end},
-
             {ev=ev_show_tuto_panels, params="5"},
             {ev=ev_show_name_panel, params="name_5"},
         },
@@ -240,7 +243,7 @@ general_events = {
         },
 
         [8]={
-            {ev=ev_offset_soul_slot},
+            {ev=ev_display_turn},
             {ev=ev_souls, params={1, true}},
             {ev=ev_cond, params={"(1)8"}},
                 {ev=ev_spawn, params={1, true, 0, 0, nil, {inert=1}}},
@@ -302,7 +305,7 @@ general_events = {
             {ev=mk_square_trigger, params={{event="8_solved, move_7"},8,0}},
         },
         [9]={
-            {ev=ev_offset_soul_slot},
+            {ev=ev_display_turn},
             {ev=ev_soul_slot, params={1, true}},
             {ev=ev_souls, params={1, true}},
             {ev=ev_souls, params={3, true}},
@@ -347,7 +350,7 @@ general_events = {
         
         },
         [10]={
-            {ev=ev_offset_soul_slot},
+            {ev=ev_display_turn},
             {ev=ev_soul_slot, params={1, true}},
             {ev=ev_souls, params={2, true}},
             {ev=ev_souls, params={3, true}},
@@ -405,7 +408,7 @@ general_events = {
             {ev=mk_square_trigger, params={{event="10_solved, move_7"},4,4}},
         },
         [11]={
-            {ev=ev_offset_soul_slot},
+            {ev=ev_display_turn},
             {ev=ev_souls, params={1, true}},
             {ev=ev_cond, params={"(1)11"}},
                 {ev=ev_spawn, params={patrol_typ, true, 6, 0, nil, {
@@ -498,5 +501,5 @@ general_events = {
             {ev=ev_show_name_panel, params="name_11"},
             {ev=mk_square_trigger, params={{event="11_solved, move_7"},5,9}},
         },
-    }
+    },
 }
