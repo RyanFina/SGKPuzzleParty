@@ -621,7 +621,6 @@ function ev_mk_play_button()
                     add(dev_save_entity, {sq.p.name, sq.px, sq.py})
                 end
             end
-
             -- save dev_save piece, tile and entity
             if not SAVE[mode_id].dev_save_piece or #dev_save_piece ==1 then
                 SAVE[mode_id].dev_save_piece = {}
@@ -630,7 +629,7 @@ function ev_mk_play_button()
                 SAVE[mode_id].dev_save_piece[i]= dev_save_piece[i]
             end
 
-            if not SAVE[mode_id].dev_save_tile and #dev_save_tile ==0 then
+            if not SAVE[mode_id].dev_save_tile or #dev_save_tile ==0 then
                 SAVE[mode_id].dev_save_tile = {}
             end
             for i = 1, #dev_save_tile, 1 do
@@ -3793,7 +3792,7 @@ function upd()
     end
     if btnp("h") then
         -- local h = mk_hint_but(-50, -50, 100, 100, "Hint")
-        _log(test.openSesame(menu,"menu"))
+        _log(test.openSesame(dev_save_tile,"dev_save_tile"))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"

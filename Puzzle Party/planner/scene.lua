@@ -2,14 +2,11 @@ general_events = {
     --dev={--},
     puzzle = {
         [0]={   
-            {ev=ev_set_encounter, params={{0,1, {2,2}}}},
             {ev=ev_create_edit_panel},
             {ev=ev_mk_play_button},
             {ev=ev_mk_card_set_button},
             {ev=ev_display_turn},
             {ev=ev_focus_hero},
-            {ev=ev_zone, params={10,10,25,15,3}},
-            {ev=ev_clip_screen, params={1, "nil", "nil", 64, 112, true}},
         },
         set_up={
             {ev=create_panels}, 
