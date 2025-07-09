@@ -1,12 +1,16 @@
 general_events = {
-    --dev={--},
+    --dev
+	--}
     puzzle = {
         [0]={   
+            --{ev=ev_set_encounter, params={{0,1, {2,2}}}},
             {ev=ev_create_edit_panel},
             {ev=ev_mk_play_button},
             {ev=ev_mk_card_set_button},
             {ev=ev_display_turn},
             {ev=ev_focus_hero},
+            --{ev=ev_zone, params={10,10,25,15,3}},
+            --{ev=ev_clip_screen, params={1, "nil", "nil", 64, 112, true}},
         },
         set_up={
             {ev=create_panels}, 
@@ -403,11 +407,269 @@ general_events = {
             {ev=ev_show_tuto_panels, params="10"},
             {ev=ev_show_name_panel, params="name_10"},
             {ev=mk_square_trigger, params={{event="10_solved, move_7"},4,4}},
-        },
-        [11]={
+		},
+		[11]={
+			{ev=ev_cond, params="(1)11"},
+				{ev=ev_spawn, params={3,true,2,2, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,3,2, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,4,2, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,5,2, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,6,2, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={patrol_typ, true, 2, 3, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,-1},
+                        { id="clockwork", move=1, atk=1, 1,1},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=1, -1,0},
+                    },
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 6, 3, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 8, 4, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 0,1},
+                        { id="clockwork", move=1, atk=1, 0,-1},
+                    },
+				}}},
+				{ev=ev_spawn, params={3,true,9,4, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,9,5, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,1,7, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,2,7, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,3,7, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,4,7, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,5,7, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={3,true,6,7, nil, {cd=1, inert=true, }}},
+				{ev=ev_spawn, params={patrol_typ, true, 2, 8, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 4, 8, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 6, 8, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+				}}},
+			{ev=ev_else},
+				{ev=ev_spawn, params={3,true,2,2, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,3,2, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,4,2, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,5,2, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,6,2, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={patrol_typ, true, 2, 3, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,-1},
+                        { id="clockwork", move=1, atk=1, 1,1},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=1, -1,0},
+                    },
+					instant=1
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 6, 3, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+					instant=1
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 8, 4, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 0,1},
+                        { id="clockwork", move=1, atk=1, 0,-1},
+                    },
+					instant=1
+				}}},
+				{ev=ev_spawn, params={3,true,9,4, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,9,5, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,1,7, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,2,7, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,3,7, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,4,7, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,5,7, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={3,true,6,7, nil, {cd=1, inert=true, instant=1, }}},
+				{ev=ev_spawn, params={patrol_typ, true, 2, 8, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+					instant=1
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 4, 8, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+					instant=1
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 6, 8, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+					instant=1
+				}}},
+			{ev=ev_end},
+			{ev=mk_entity, params={"wall", 0,0}},
+			{ev=mk_entity, params={"wall", 0,6}},
+			{ev=mk_entity, params={"wall", 0,7}},
+			{ev=mk_entity, params={"wall", 1,0}},
+			{ev=mk_entity, params={"wall", 1,1}},
+			{ev=mk_entity, params={"wall", 1,6}},
+			{ev=mk_entity, params={"wall", 2,0}},
+			{ev=mk_entity, params={"wall", 2,1}},
+			{ev=mk_entity, params={"wall", 2,6}},
+			{ev=mk_entity, params={"wall", 3,0}},
+			{ev=mk_entity, params={"wall", 3,1}},
+			{ev=mk_entity, params={"wall", 3,6}},
+			{ev=mk_entity, params={"wall", 4,0}},
+			{ev=mk_entity, params={"wall", 4,1}},
+			{ev=mk_entity, params={"wall", 4,6}},
+			{ev=mk_entity, params={"wall", 5,0}},
+			{ev=mk_entity, params={"wall", 5,1}},
+			{ev=mk_entity, params={"wall", 5,6}},
+			{ev=mk_entity, params={"wall", 6,0}},
+			{ev=mk_entity, params={"wall", 6,1}},
+			{ev=mk_entity, params={"wall", 6,6}},
+			{ev=mk_entity, params={"wall", 7,0}},
+			{ev=mk_entity, params={"wall", 7,1}},
+			{ev=mk_entity, params={"wall", 7,2}},
+			{ev=mk_entity, params={"wall", 7,3}},
+			{ev=mk_entity, params={"wall", 7,6}},
+			{ev=mk_entity, params={"wall", 7,7}},
+			{ev=mk_entity, params={"wall", 8,0}},
+			{ev=mk_entity, params={"wall", 8,1}},
+			{ev=mk_entity, params={"wall", 8,2}},
+			{ev=mk_entity, params={"wall", 8,3}},
+			{ev=mk_entity, params={"wall", 9,0}},
+			{ev=mk_entity, params={"wall", 9,1}},
+			{ev=mk_entity, params={"wall", 9,2}},
+			{ev=mk_entity, params={"wall", 9,3}},
+            {ev=ev_show_tuto_panels, params="11"},
+            {ev=ev_show_name_panel, params="name_11"},
+            {ev=mk_square_trigger, params={{event="11_solved, move_7"},0,1}},
+		},
+		[12]={
+		            {ev=ev_display_turn},
+            {ev=ev_souls, params={1, true}},
+            {ev=ev_cond, params={"(1)12"}},
+                {ev=ev_spawn, params={patrol_typ, true, 6, 0, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 1,1},
+                        { id="clockwork", move=1, atk=1, -1,-1},
+                    }
+                }}},
+                {ev=ev_spawn, params={3, true, 7, 0, nil, {inert=1}}},
+                {ev=ev_spawn, params={2, true, 8, 0, nil, {inert=1}}},
+                {ev=ev_spawn, params={3, true, 9, 1, nil, {inert=1}}},
+                {ev=ev_spawn, params={0, true, 0, 2, nil, {inert=1}}},
+                {ev=ev_spawn, params={patrol_typ, true, 2,3, nil, {             
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 1,-1},
+                        { id="clockwork", move=1, atk=1, 1,1},
+                        { id="clockwork", move=1, atk=1, -1,1},
+                        { id="clockwork", move=1, atk=1, -1,-1},
+                    }
+                }}},
+                {ev=ev_spawn, params={1, true, 5, 4, nil, {inert=1, airy =1}}},
+                {ev=ev_spawn, params={3, true, 3, 5, nil, {inert=1}}},
+                {ev=ev_spawn, params={2, true, 1, 6, nil, {inert=1}}},
+                {ev=ev_spawn, params={5, true, 9, 6, nil, {inert=1}}},
+                {ev=ev_spawn, params={2, true, 4, 7, nil, {inert=1}}},
+
+                {ev=ev_spawn, params={2, true, 1, 8, nil, {inert=1}}},
+                {ev=ev_spawn, params={2, true, 7, 8, nil, {inert=1}}},
+                {ev=ev_spawn, params={patrol_typ, true, 9, 8, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 0,1},
+                        { id="clockwork", move=1, atk=1, 0,-1},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    }
+                }}},
+                {ev=ev_spawn, params={3, true, 2, 9, nil, {inert=1}}},
+                {ev=ev_spawn, params={5, true, 3, 9, nil, {inert=1}}},
+                {ev=ev_spawn, params={4, true, 9, 9, nil, {inert=1}}},
+                
+            {ev=ev_else},
+                {ev=ev_spawn, params={patrol_typ, true, 2, 3, nil, {
+                    tempo=2,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 1,1},
+                        { id="clockwork", move=1, atk=1, -1,-1},
+                    }, 
+                    instant=1
+                }}},
+                {ev=ev_spawn, params={3, true, 7, 0, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={2, true, 8, 0, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={3, true, 9, 1, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={0, true, 0, 2, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={patrol_typ, true, 2,5, nil, {             
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 1,-1},
+                        { id="clockwork", move=1, atk=1, 1,1},
+                        { id="clockwork", move=1, atk=1, -1,1},
+                        { id="clockwork", move=1, atk=1, -1,-1},
+                    }, 
+                    instant = 1
+                }}},
+                {ev=ev_spawn, params={1, true, 5, 4, nil, {inert=1, airy =1, instant =1}}},
+                {ev=ev_spawn, params={3, true, 3, 5, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={2, true, 1, 6, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={5, true, 9, 6, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={2, true, 4, 7, nil, {inert=1, instant=1}}},
+
+                {ev=ev_spawn, params={2, true, 1, 8, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={2, true, 7, 8, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={patrol_typ, true, 9, 8, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 0,1},
+                        { id="clockwork", move=1, atk=1, 0,-1},
+                        { id="clockwork", move=1, atk=1, 1,0},
+                    },
+                    instant = 1
+                }}},
+                {ev=ev_spawn, params={3, true, 2, 9, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={5, true, 3, 9, nil, {inert=1, instant=1}}},
+                {ev=ev_spawn, params={4, true, 9, 9, nil, {inert=1, instant=1}}},
+            {ev=ev_end},
+		},
+        [13]={
             {ev=ev_display_turn},
             {ev=ev_souls, params={1, true}},
-            {ev=ev_cond, params={"(1)11"}},
+            {ev=ev_cond, params={"(1)13"}},
                 {ev=ev_spawn, params={patrol_typ, true, 6, 0, nil, {
                     tempo=2,
                     behavior={

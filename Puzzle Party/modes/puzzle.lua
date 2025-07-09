@@ -24,6 +24,8 @@ function start()
 	mode.in_cine=true
 	mode.no_shotgun=true
 	mode.hide_cards=true
+	-- mode.lvl= START_LVL or 1
+	mode.lvl=mode.load_hero_stats() or (START_LVL or 1)
 	mode.lvl= START_LVL or 1
 	mode.get_start_sq(find_start_coords)
 	if tuto_intro and not DEV then
@@ -53,7 +55,7 @@ function get_board_size()
 		end
 		
 		return 3,8
-	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 then
+	elseif mode.lvl ==8 or mode.lvl == 9 or mode.lvl == 10 or mode.lvl ==11 or mode.lvl ==12 then
 		return 10,10
 	elseif mode.lvl ==0 then
 		return 15,15
@@ -105,6 +107,9 @@ function find_start_coords(lvl, history, destination, px, py)
 		mode.destination = {}
 		return 5,9
 	elseif mode.lvl == 11 then
+		mode.destination = {}
+		return 0,9
+		elseif mode.lvl == 12 then
 		mode.destination = {}
 		return 2,0
 	elseif START_LVL and mode.lvl == START_LVL then
