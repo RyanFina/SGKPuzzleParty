@@ -426,25 +426,25 @@ general_events = {
                     tempo=4,
                     behavior={
                         { id="clockwork", move=1, atk=1, -1,-1},
-                        { id="clockwork", move=1, atk=1, 1,1},
-                        { id="clockwork", move=1, atk=1, 1,0},
-                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,1},
+                        { id="clockwork", move=1, atk=nil, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
                     },
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 6, 3, nil, {
                     tempo=4,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
                     },
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 8, 4, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, 0,1},
-                        { id="clockwork", move=1, atk=1, 0,-1},
+                        { id="clockwork", move=1, atk=nil, 0,1},
+                        { id="clockwork", move=1, atk=nil, 0,-1},
                     },
 				}}},
 				{ev=ev_spawn, params={3,true,9,4, nil, {cd=1, inert=true, }}},
@@ -458,22 +458,31 @@ general_events = {
 				{ev=ev_spawn, params={patrol_typ, true, 2, 8, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
                     },
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 4, 8, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
                     },
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 6, 8, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
+                    },
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 9, 8, nil, {
+                    tempo=4,
+                    behavior={
+                        { id="clockwork", move=1, atk=1, 0,-1},
                         { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=1, 0,1},
+                        { id="clockwork", move=1, atk=1, -1,0},
                     },
 				}}},
 			{ev=ev_else},
@@ -486,27 +495,27 @@ general_events = {
                     tempo=4,
                     behavior={
                         { id="clockwork", move=1, atk=1, -1,-1},
-                        { id="clockwork", move=1, atk=1, 1,1},
-                        { id="clockwork", move=1, atk=1, 1,0},
-                        { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,1},
+                        { id="clockwork", move=1, atk=nil, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
                     },
 					instant=1
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 6, 3, nil, {
                     tempo=4,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
                     },
 					instant=1
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 8, 4, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, 0,1},
-                        { id="clockwork", move=1, atk=1, 0,-1},
+                        { id="clockwork", move=1, atk=nil, 0,1},
+                        { id="clockwork", move=1, atk=nil, 0,-1},
                     },
 					instant=1
 				}}},
@@ -521,24 +530,34 @@ general_events = {
 				{ev=ev_spawn, params={patrol_typ, true, 2, 8, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
                     },
 					instant=1
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 4, 8, nil, {
                     tempo=2,
                     behavior={
-                        { id="clockwork", move=1, atk=1, -1,0},
-                        { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
                     },
 					instant=1
 				}}},
 				{ev=ev_spawn, params={patrol_typ, true, 6, 8, nil, {
                     tempo=2,
                     behavior={
+                        { id="clockwork", move=1, atk=nil, -1,0},
+                        { id="clockwork", move=1, atk=nil, 1,0},
+                    },
+					instant=1
+				}}},
+				{ev=ev_spawn, params={patrol_typ, true, 9, 8, nil, {
+                    tempo=4,
+                    behavior={
                         { id="clockwork", move=1, atk=1, -1,0},
+                        { id="clockwork", move=1, atk=1, 0,1},
                         { id="clockwork", move=1, atk=1, 1,0},
+                        { id="clockwork", move=1, atk=1, 0,-1},
                     },
 					instant=1
 				}}},
@@ -548,6 +567,7 @@ general_events = {
 			{ev=mk_entity, params={"wall", 0,7}},
 			{ev=mk_entity, params={"wall", 1,0}},
 			{ev=mk_entity, params={"wall", 1,1}},
+			{ev=mk_entity, params={"wall", 1,3}},
 			{ev=mk_entity, params={"wall", 1,6}},
 			{ev=mk_entity, params={"wall", 2,0}},
 			{ev=mk_entity, params={"wall", 2,1}},

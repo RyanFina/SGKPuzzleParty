@@ -18,12 +18,15 @@ english ={
         left_puzzle_8 = " -Knights can jump over pieces, as well as their threaten ranges!",
         left_puzzle_9 = " -Not all mazes have one solution...",
         left_puzzle_10 = " -Some can even have dead ends!",
-        left_puzzle_11 = " -Not all mazes are waiting to be solved either...",
+        --left_puzzle_11 = " -Not all mazes are waiting to be solved either...",
+        left_puzzle_11 = " -Hover over a watcher to see its path!",
         left_puzzle_12 = " -Some even actively trying to kill you!",
 
         dialogue_puzzle_2_1 = " To understand the way of the cannonball, you need to understand the weight of the ball. The force it was thrown, the push back it causes. What's better than an unlimited amount of cannonballs ready to throw at ironclad enemies to understand that? Pass the stage and prove your qualification",
         dialogue_puzzle_6_2 = " Cannonball will push enemy. Push enemy will be repelled along the path of the original thrown . Pushed enemy will be stunned and can't attack you in the same turn.",
-        name_1= "Prison",
+        dialogue_puzzle_11_1 = "Watchers are pieces that follow a set path. Every turn, they will move to the marker they place on the floor. If they place a target, it will move if the tile isn't blocked. If it places down a black skull, it will either move to the tile if it isn't blocked or attack the player if he is on its path. If they can't move to the marker, they are forced to wait. It's important to keep track of their moves, as they will block other pieces from attacking!",
+        
+		name_1= "Prison",
         name_2="Corridor",
         name_3="Stucked",
         name_4="Cross Road",
@@ -33,7 +36,7 @@ english ={
         name_8="Knight's Quest",
         name_9="Charging Through!",
         name_10="Winding Paths",
-        name_11="Delayed Movements",
+        name_11="On Patrol",
         name_12="Shapeshifter",
         -- Medal +Objectives:
         obj_puzzle_2 = " -Get through the corridor and escape",

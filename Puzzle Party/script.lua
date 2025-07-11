@@ -3793,7 +3793,8 @@ function upd()
     end
     if btnp("h") then
         -- local h = mk_hint_but(-50, -50, 100, 100, "Hint")
-        _log(test.openSesame(dev_save_tile,"dev_save_tile"))
+        --_log(test.openSesame(dev_save_tile,"dev_save_tile"))
+		_log(test.openSesame(bestTries))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
