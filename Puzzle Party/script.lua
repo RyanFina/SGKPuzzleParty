@@ -382,20 +382,39 @@ function ev_paralysis(num, is_stack_only)
     stack.paralysis = num
     event_nxt()
 end
-function ev_deathcount(num1, reset)
-    local lvl = mode.lvl
-    local eli = true
-    local death_count = mke()
+function ev_deathcount(num1)
+    death_count = mke()
     function death_count:upd ()
-        if mode.lvl == lvl then
-            if mode.turns == num1 and eli then
-                eli = false
-                remove_buts()
-                wait(23, function()
-                    xpl_king(hero)
-                end)
-                kl(self)
-            end
+        if mode.turns == num1 then
+            remove_buts()
+            wait(23, function()
+                xpl_king(hero)
+            end)
+            kl(self)
+        end
+    end
+    death_count.dr= function()
+        if mode.turns then
+            lprint(num1-mode.turns,  lprint("Turns left: ", 260+ (camera_x or 0), 175 + (camera_y or 0),4) , 175 + (camera_y or 0),5)
+        end
+    end
+    event_nxt()
+end
+
+function ev_chrono_chess(time)
+    chrono_chess = mke()
+    chrono_chess.time= time*60
+    chrono_chess.current_time = chrono_time
+    function chrono_chess:upd ()
+        if chrono_time and chrono_time == self.time + self.current_time then
+            remove_buts()
+            opp_turn()
+            self.current_time = chrono_time
+        end        
+    end
+    function chrono_chess:dr()
+        if chrono_time then
+            lprint(ceil((self.current_time+ self.time-chrono_time)/60).." s" ,  lprint("Time left: ", 130+ (camera_x or 0), 175 + (camera_y or 0),4) , 175 + (camera_y or 0),5)
         end
     end
     event_nxt()
@@ -2289,7 +2308,8 @@ function ev_transport(id, f)
     mode.clear_allies()
     pressZ = false
     kl(display)
-
+    kl(death_count)
+    kl(chrono_chess)
     for k, v in pairs(PIECES_TYPES) do
         append("activate_soul", function (e)
             
@@ -3793,8 +3813,7 @@ function upd()
     end
     if btnp("h") then
         -- local h = mk_hint_but(-50, -50, 100, 100, "Hint")
-        --_log(test.openSesame(dev_save_tile,"dev_save_tile"))
-		_log(test.openSesame(bestTries))
+        _log(test.openSesame(dev_save_tile,"dev_save_tile"))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -3994,7 +4013,9 @@ autocalls = {
                 v.p.cd = v.p.cd-1
             end
         end
-       
+        if chrono_chess then
+            chrono_chess.current_time = chrono_time
+        end
     end},
     on_bad_death = {function(p) 
         if p == selected and edit_panel then
