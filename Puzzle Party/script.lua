@@ -414,7 +414,7 @@ function ev_chrono_chess(time)
     end
     function chrono_chess:dr()
         if chrono_time then
-            lprint(ceil((self.current_time+ self.time-chrono_time)/60).." s" ,  lprint("Time left: ", 130+ (camera_x or 0), 175 + (camera_y or 0),4) , 175 + (camera_y or 0),5)
+            lprint(ceil((self.current_time+ self.time-chrono_time)/60)<=60 and ceil((self.current_time+ self.time-chrono_time)/60).."s" or flr((self.current_time+ self.time-chrono_time)/60/60).."m " .. ceil(((self.current_time+ self.time-chrono_time)/60)%60).."s",  lprint("Time left: ", 130+ (camera_x or 0), 175 + (camera_y or 0),4) , 175 + (camera_y or 0),5)
         end
     end
     event_nxt()
@@ -3556,7 +3556,6 @@ for k, v in pairs(general_events) do
     add_move_events(v)
     add_emote_events(v) 
 end
-
 -- Shortcuts
 mode_id = ""
 defbtn("f", 0, "k:f")
@@ -3573,6 +3572,7 @@ function upd()
     if camera_y then
         my = my + camera_y
     end
+  
 	if btnp("f") then
         if not hero then return end
         if not hero.sq then return end
@@ -3813,7 +3813,7 @@ function upd()
     end
     if btnp("h") then
         -- local h = mk_hint_but(-50, -50, 100, 100, "Hint")
-        _log(test.openSesame(dev_save_tile,"dev_save_tile"))
+        _log(test.openSesame(secret_code,"secret_code"))
         local txt=""
         for k, v in pairs(bestTries) do
             txt = txt .. ":trophy: **LVL:** ".. k .." \n :star: **Best Try:** " .. v.." turns\n\n"
@@ -3999,6 +3999,7 @@ function set_all_drawing()
 		set_drawing(dp)
 	end
 end
+
 cl_danger={}
 cl_movement = {}
 autocalls = {
@@ -4158,8 +4159,6 @@ append("new_level", function()
         end
         offSoul.life = TEMPO
     end, "responsive soul slot 1")
-
-   
 end , "responsive soul slot")
 
 append("init_game",set_all_drawing,"terminal drawing")
@@ -4401,7 +4400,6 @@ append("set_mode", function()
         end
     end
 
-  
 end, "event_functions")
 function on_sq_but_init(but,sq)
     
@@ -4943,7 +4941,7 @@ function draw_6()
 	if btn("b") and DEV then for k,e in pairs(ents) do if not e.issq and e.button then lprint(k,e.x,e.y,5,0,4) end end end
 	if btn("g") and DEV then lprint(mx..","..my..","..(get_square_at(mx,my) and get_square_at(mx,my).px or "nil")..","..(get_square_at(mx,my) and get_square_at(mx,my).py or "nil"), 5+(camera_x or 0), 173+(camera_y or 0),5,0,4) end
 end
--- append("colorize_piece",function (a,b,c,d,e,f)
+-- append("ctrl_mode",function (a,b,c,d,e,f)
 --     _log(test.openSesame(a, "a"))
 --     _log(test.openSesame(b, "b"))
 --     _log(test.openSesame(c, "c"))

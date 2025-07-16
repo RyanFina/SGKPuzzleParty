@@ -729,5 +729,14 @@ tileType = {
                 dr_tile(53, x, y) 
             end 
         end
-    }
+    },
+    flag = {
+        dr = function(sq, x, y)
+            if move_sq_condition(sq) then
+                dr_tile(57, x, y)
+            else
+                dr_tile(56, x, y)
+            end
+        end
+    },
 }
